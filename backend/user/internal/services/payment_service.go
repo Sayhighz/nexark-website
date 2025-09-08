@@ -238,3 +238,189 @@ func (s *PaymentService) GetUserPayments(ctx context.Context, userID uint, limit
 
 	return payments, total, nil
 }
+
+func (s *PaymentService) AddPaymentMethod(ctx context.Context, userID uint, paymentMethodID string, setAsDefault bool) (*models.UserPaymentMethod, error) {
+	// Get user
+	user, err := s.userService.GetUserByID(ctx, userID)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get user: %w", err)
+	}
+
+	if user.StripeCustomerID == nil {
+		return nil, fmt.Errorf("user has no stripe customer")
+	}
+
+	// Attach payment method to Stripe customer
+	stripeMethod, err := s.stripeService.AttachPaymentMethod(ctx, paymentMethodID, *user.StripeCustomerID)
+	if err != nil {
+		return nil, fmt.Errorf("failed to attach payment method: %w", err)
+	}
+
+	// Start database transaction
+	var userMethod models.UserPaymentMethod
+	err = s.db.Transaction(func(tx *gorm.DB) error {
+		// If setting as default, unset other defaults
+		if setAsDefault {
+			if err := tx.Model(&models.UserPaymentMethod{}).
+				Where("user_id = ?", userID).
+				Update("is_default", false).Error; err != nil {
+				return fmt.Errorf("failed to unset default payment methods: %w", err)
+			}
+		}
+
+		// Create user payment method record
+		userMethod = models.UserPaymentMethod{
+			UserID:                userID,
+			StripePaymentMethodID: paymentMethodID,
+			PaymentMethodType:     string(stripeMethod.Type),
+			IsDefault:             setAsDefault,
+			IsActive:              true,
+		}
+
+		// Extract card information if available
+		if stripeMethod.Card != nil {
+			brand := string(stripeMethod.Card.Brand)
+			last4 := stripeMethod.Card.Last4
+			expMonth := int(stripeMethod.Card.ExpMonth)
+			expYear := int(stripeMethod.Card.ExpYear)
+
+			userMethod.Brand = &brand
+			userMethod.Last4 = &last4
+			userMethod.ExpMonth = &expMonth
+			userMethod.ExpYear = &expYear
+		}
+
+		return tx.Create(&userMethod).Error
+	})
+
+	if err != nil {
+		return nil, fmt.Errorf("failed to save payment method: %w", err)
+	}
+
+	return &userMethod, nil
+}
+
+func (s *PaymentService) GetUserPaymentMethods(ctx context.Context, userID uint) ([]models.UserPaymentMethod, error) {
+	var methods []models.UserPaymentMethod
+	err := s.db.Where("user_id = ? AND is_active = ?", userID, true).
+		Order("is_default DESC, created_at DESC").
+		Find(&methods).Error
+
+	if err != nil {
+		return nil, fmt.Errorf("failed to get payment methods: %w", err)
+	}
+
+	return methods, nil
+}
+
+func (s *PaymentService) SetDefaultPaymentMethod(ctx context.Context, userID uint, paymentMethodID string) error {
+	return s.db.Transaction(func(tx *gorm.DB) error {
+		// Verify the payment method belongs to the user
+		var method models.UserPaymentMethod
+		if err := tx.Where("user_id = ? AND stripe_payment_method_id = ? AND is_active = ?",
+			userID, paymentMethodID, true).First(&method).Error; err != nil {
+			if err == gorm.ErrRecordNotFound {
+				return fmt.Errorf("payment method not found")
+			}
+			return fmt.Errorf("failed to find payment method: %w", err)
+		}
+
+		// Unset all defaults for this user
+		if err := tx.Model(&models.UserPaymentMethod{}).
+			Where("user_id = ?", userID).
+			Update("is_default", false).Error; err != nil {
+			return fmt.Errorf("failed to unset defaults: %w", err)
+		}
+
+		// Set the new default
+		if err := tx.Model(&method).Update("is_default", true).Error; err != nil {
+			return fmt.Errorf("failed to set default: %w", err)
+		}
+
+		return nil
+	})
+}
+
+func (s *PaymentService) RemovePaymentMethod(ctx context.Context, userID uint, paymentMethodID string) error {
+	return s.db.Transaction(func(tx *gorm.DB) error {
+		// Find the payment method
+		var method models.UserPaymentMethod
+		if err := tx.Where("user_id = ? AND stripe_payment_method_id = ? AND is_active = ?",
+			userID, paymentMethodID, true).First(&method).Error; err != nil {
+			if err == gorm.ErrRecordNotFound {
+				return fmt.Errorf("payment method not found")
+			}
+			return fmt.Errorf("failed to find payment method: %w", err)
+		}
+
+		// Detach from Stripe
+		_, err := s.stripeService.DetachPaymentMethod(ctx, paymentMethodID)
+		if err != nil {
+			return fmt.Errorf("failed to detach from Stripe: %w", err)
+		}
+
+		// Mark as inactive in our database
+		if err := tx.Model(&method).Update("is_active", false).Error; err != nil {
+			return fmt.Errorf("failed to deactivate payment method: %w", err)
+		}
+
+		// If this was the default, set another as default
+		if method.IsDefault {
+			var newDefault models.UserPaymentMethod
+			if err := tx.Where("user_id = ? AND is_active = ? AND payment_method_id != ?",
+				userID, true, method.PaymentMethodID).
+				Order("created_at DESC").First(&newDefault).Error; err == nil {
+				tx.Model(&newDefault).Update("is_default", true)
+			}
+		}
+
+		return nil
+	})
+}
+
+func (s *PaymentService) ValidatePaymentMethod(ctx context.Context, userID uint, paymentMethodID string) error {
+	// Check if payment method belongs to user
+	var method models.UserPaymentMethod
+	err := s.db.Where("user_id = ? AND stripe_payment_method_id = ? AND is_active = ?",
+		userID, paymentMethodID, true).First(&method).Error
+
+	if err != nil {
+		if err == gorm.ErrRecordNotFound {
+			return fmt.Errorf("payment method not found or not accessible")
+		}
+		return fmt.Errorf("failed to validate payment method: %w", err)
+	}
+
+	// Additional validation with Stripe
+	user, err := s.userService.GetUserByID(ctx, userID)
+	if err != nil {
+		return fmt.Errorf("failed to get user: %w", err)
+	}
+
+	if user.StripeCustomerID == nil {
+		return fmt.Errorf("user has no stripe customer")
+	}
+
+	// Get payment method from Stripe to ensure it's still valid
+	methods, err := s.stripeService.ListCustomerPaymentMethods(ctx, *user.StripeCustomerID)
+	if err != nil {
+		return fmt.Errorf("failed to get Stripe payment methods: %w", err)
+	}
+
+	// Check if the payment method exists in Stripe
+	found := false
+	for _, pm := range methods {
+		if pm.ID == paymentMethodID {
+			found = true
+			break
+		}
+	}
+
+	if !found {
+		// Mark as inactive if not found in Stripe
+		s.db.Model(&method).Update("is_active", false)
+		return fmt.Errorf("payment method is no longer valid")
+	}
+
+	return nil
+}
