@@ -42,7 +42,7 @@ func (s *ShopService) GetItemsByCategory(ctx context.Context, categoryID uint, l
 	}
 
 	// Get items with pagination
-	err := query.Order("display_order ASC, item_name ASC").
+	err := query.Order("item_name ASC").
 		Limit(limit).
 		Offset(offset).
 		Preload("Category").
@@ -71,7 +71,7 @@ func (s *ShopService) GetAllItems(ctx context.Context, limit, offset int, featur
 	}
 
 	// Get items with pagination
-	err := query.Order("display_order ASC, item_name ASC").
+	err := query.Order("item_name ASC").
 		Limit(limit).
 		Offset(offset).
 		Preload("Category").

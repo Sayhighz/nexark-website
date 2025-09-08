@@ -1,13 +1,10 @@
--- nexark_user database schema (MySQL version)
-
-CREATE DATABASE IF NOT EXISTS nexark_user CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
-USE nexark_user;
+-- nex_web_test database schema (MySQL version)
 
 -- ===============================
 -- USER MANAGEMENT TABLES
 -- ===============================
 
-CREATE TABLE users (
+CREATE TABLE IF NOT EXISTS users (
     user_id INT AUTO_INCREMENT PRIMARY KEY,
     steam_id VARCHAR(20) UNIQUE NOT NULL,
     username VARCHAR(100) NOT NULL,
@@ -26,7 +23,7 @@ CREATE TABLE users (
     INDEX idx_active (is_active)
 );
 
-CREATE TABLE user_sessions (
+CREATE TABLE IF NOT EXISTS user_sessions (
     session_id INT AUTO_INCREMENT PRIMARY KEY,
     user_id INT,
     session_token VARCHAR(255) UNIQUE NOT NULL,
@@ -44,7 +41,7 @@ CREATE TABLE user_sessions (
 -- SERVER MANAGEMENT TABLES
 -- ===============================
 
-CREATE TABLE servers (
+CREATE TABLE IF NOT EXISTS servers (
     server_id INT AUTO_INCREMENT PRIMARY KEY,
     server_name VARCHAR(50) NOT NULL,
     server_type VARCHAR(20) NOT NULL,
@@ -58,7 +55,7 @@ CREATE TABLE servers (
     last_ping TIMESTAMP NULL
 );
 
-CREATE TABLE server_display_categories (
+CREATE TABLE IF NOT EXISTS server_display_categories (
     category_id INT AUTO_INCREMENT PRIMARY KEY,
     category_name VARCHAR(100) NOT NULL,
     category_key VARCHAR(50) UNIQUE NOT NULL,
@@ -66,7 +63,7 @@ CREATE TABLE server_display_categories (
     is_active BOOLEAN DEFAULT true
 );
 
-CREATE TABLE server_display_info (
+CREATE TABLE IF NOT EXISTS server_display_info (
     info_id INT AUTO_INCREMENT PRIMARY KEY,
     server_id INT,
     category_id INT,
@@ -84,7 +81,7 @@ CREATE TABLE server_display_info (
 -- SHOPPING SYSTEM TABLES
 -- ===============================
 
-CREATE TABLE item_categories (
+CREATE TABLE IF NOT EXISTS item_categories (
     category_id INT AUTO_INCREMENT PRIMARY KEY,
     category_name VARCHAR(100) NOT NULL,
     description TEXT,
@@ -93,7 +90,7 @@ CREATE TABLE item_categories (
     is_active BOOLEAN DEFAULT true
 );
 
-CREATE TABLE items (
+CREATE TABLE IF NOT EXISTS items (
     item_id INT AUTO_INCREMENT PRIMARY KEY,
     category_id INT,
     item_name VARCHAR(200) NOT NULL,
@@ -103,6 +100,7 @@ CREATE TABLE items (
     rcon_command TEXT NOT NULL,
     image_url TEXT,
     stock_quantity INT DEFAULT -1,
+    display_order INT DEFAULT 0,
     is_featured BOOLEAN DEFAULT false,
     is_active BOOLEAN DEFAULT true,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
@@ -112,7 +110,7 @@ CREATE TABLE items (
     INDEX idx_featured (is_featured)
 );
 
-CREATE TABLE shopping_cart (
+CREATE TABLE IF NOT EXISTS shopping_cart (
     cart_id INT AUTO_INCREMENT PRIMARY KEY,
     user_id INT,
     item_id INT,
@@ -129,7 +127,7 @@ CREATE TABLE shopping_cart (
 -- STRIPE PAYMENT SYSTEM TABLES
 -- ===============================
 
-CREATE TABLE payments (
+CREATE TABLE IF NOT EXISTS payments (
     payment_id INT AUTO_INCREMENT PRIMARY KEY,
     payment_uuid VARCHAR(36) UNIQUE NOT NULL,
     user_id INT,
@@ -155,7 +153,7 @@ CREATE TABLE payments (
 
 -- ต่อจากตัวก่อนหน้า...
 
-CREATE TABLE user_payment_methods (
+CREATE TABLE IF NOT EXISTS user_payment_methods (
     payment_method_id INT AUTO_INCREMENT PRIMARY KEY,
     user_id INT,
     stripe_payment_method_id VARCHAR(100) UNIQUE NOT NULL,
@@ -175,7 +173,7 @@ CREATE TABLE user_payment_methods (
 -- TRANSACTION SYSTEM TABLES
 -- ===============================
 
-CREATE TABLE transactions (
+CREATE TABLE IF NOT EXISTS transactions (
     transaction_id INT AUTO_INCREMENT PRIMARY KEY,
     transaction_uuid VARCHAR(36) UNIQUE NOT NULL,
     user_id INT,
@@ -196,7 +194,7 @@ CREATE TABLE transactions (
     INDEX idx_created (created_at)
 );
 
-CREATE TABLE credit_transactions (
+CREATE TABLE IF NOT EXISTS credit_transactions (
     credit_transaction_id INT AUTO_INCREMENT PRIMARY KEY,
     user_id INT,
     related_payment_id INT,
@@ -220,7 +218,7 @@ CREATE TABLE credit_transactions (
 -- GAMIFICATION TABLES
 -- ===============================
 
-CREATE TABLE loyalty_point_transactions (
+CREATE TABLE IF NOT EXISTS loyalty_point_transactions (
     point_transaction_id INT AUTO_INCREMENT PRIMARY KEY,
     user_id INT,
     points INT NOT NULL,
@@ -234,7 +232,7 @@ CREATE TABLE loyalty_point_transactions (
     INDEX idx_user_type (user_id, transaction_type)
 );
 
-CREATE TABLE spin_wheel_config (
+CREATE TABLE IF NOT EXISTS spin_wheel_config (
     config_id INT AUTO_INCREMENT PRIMARY KEY,
     reward_type ENUM('credits', 'items', 'points') NOT NULL,
     reward_value TEXT NOT NULL,
@@ -245,7 +243,7 @@ CREATE TABLE spin_wheel_config (
     created_by INT
 );
 
-CREATE TABLE spin_wheel_results (
+CREATE TABLE IF NOT EXISTS spin_wheel_results (
     spin_id INT AUTO_INCREMENT PRIMARY KEY,
     user_id INT,
     config_id INT,
@@ -256,7 +254,7 @@ CREATE TABLE spin_wheel_results (
     FOREIGN KEY (config_id) REFERENCES spin_wheel_config(config_id)
 );
 
-CREATE TABLE daily_login_rewards (
+CREATE TABLE IF NOT EXISTS daily_login_rewards (
     reward_id INT AUTO_INCREMENT PRIMARY KEY,
     user_id INT,
     day_streak INT NOT NULL,
@@ -271,7 +269,7 @@ CREATE TABLE daily_login_rewards (
 -- CONTENT MANAGEMENT TABLES
 -- ===============================
 
-CREATE TABLE news (
+CREATE TABLE IF NOT EXISTS news (
     news_id INT AUTO_INCREMENT PRIMARY KEY,
     title VARCHAR(200) NOT NULL,
     content TEXT NOT NULL,
@@ -285,7 +283,7 @@ CREATE TABLE news (
     INDEX idx_published (is_published, published_at)
 );
 
-CREATE TABLE announcements (
+CREATE TABLE IF NOT EXISTS announcements (
     announcement_id INT AUTO_INCREMENT PRIMARY KEY,
     title VARCHAR(200) NOT NULL,
     content TEXT NOT NULL,
@@ -302,8 +300,8 @@ CREATE TABLE announcements (
 -- INSERT INITIAL DATA
 -- ===============================
 
--- Insert server display categories
-INSERT INTO server_display_categories (category_name, category_key, display_order) VALUES
+-- Insert server display categories (ignore if exists)
+INSERT IGNORE INTO server_display_categories (category_name, category_key, display_order) VALUES
 ('Server Settings', 'server_settings', 1),
 ('Dino Stats', 'dino_stats', 2),
 ('Player Stats', 'player_stats', 3),
@@ -311,13 +309,13 @@ INSERT INTO server_display_categories (category_name, category_key, display_orde
 ('Item Stats', 'item_stats', 5),
 ('Server Rules', 'server_rules', 6);
 
--- Insert servers
-INSERT INTO servers (server_name, server_type, ip_address, port, rcon_port, rcon_password, max_players) VALUES
+-- Insert servers (ignore if exists)
+INSERT IGNORE INTO servers (server_name, server_type, ip_address, port, rcon_port, rcon_password, max_players) VALUES
 ('ARK x25', 'PVP', '127.0.0.1', 7777, 27020, 'rcon_password_x25', 70),
 ('ARK x100', 'PVP', '127.0.0.1', 7778, 27021, 'rcon_password_x100', 70);
 
--- Insert item categories
-INSERT INTO item_categories (category_name, description, display_order) VALUES
+-- Insert item categories (ignore if exists)
+INSERT IGNORE INTO item_categories (category_name, description, display_order) VALUES
 ('Dinosaurs', 'Tamed dinosaurs and creatures', 1),
 ('Resources', 'Raw materials and crafting resources', 2),
 ('Items', 'Tools, weapons, and equipment', 3),

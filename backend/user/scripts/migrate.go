@@ -5,6 +5,7 @@ import (
 	"io/ioutil"
 	"log"
 	"os"
+	"strings"
 
 	"nexark-user-backend/internal/config"
 	"nexark-user-backend/pkg/database"
@@ -45,9 +46,20 @@ func main() {
 		log.Fatal("Failed to get underlying sql.DB:", err)
 	}
 
-	_, err = sqlDB.Exec(string(content))
-	if err != nil {
-		log.Fatal("Failed to execute migration:", err)
+	// Split SQL content into individual statements
+	sqlStatements := strings.Split(string(content), ";")
+
+	for _, stmt := range sqlStatements {
+		stmt = strings.TrimSpace(stmt)
+		if stmt == "" {
+			continue
+		}
+
+		_, err = sqlDB.Exec(stmt)
+		if err != nil {
+			log.Printf("Failed to execute statement: %s", stmt)
+			log.Fatal("Failed to execute migration:", err)
+		}
 	}
 
 	fmt.Println("Migration executed successfully!")

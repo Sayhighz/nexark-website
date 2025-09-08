@@ -48,6 +48,24 @@ type ServerDisplayInfo struct {
 	Category ServerDisplayCategory `gorm:"foreignKey:CategoryID" json:"category,omitempty"`
 }
 
+type RCONCommandHistory struct {
+	CommandID        uint      `gorm:"primaryKey;column:command_id" json:"command_id"`
+	ServerID         uint      `gorm:"column:server_id" json:"server_id"`
+	Command          string    `gorm:"column:command" json:"command"`
+	Response         *string   `gorm:"column:response" json:"response"`
+	Status           string    `gorm:"column:status" json:"status"`
+	ExecutedBy       *uint     `gorm:"column:executed_by" json:"executed_by"`
+	ExecutionContext string    `gorm:"column:execution_context" json:"execution_context"`
+	ExecutedAt       time.Time `gorm:"column:executed_at" json:"executed_at"`
+
+	// Relations
+	Server Server `gorm:"foreignKey:ServerID" json:"server,omitempty"`
+}
+
+func (RCONCommandHistory) TableName() string {
+	return "rcon_command_history"
+}
+
 func (ServerDisplayInfo) TableName() string {
 	return "server_display_info"
 }

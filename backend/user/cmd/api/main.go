@@ -10,7 +10,6 @@ import (
 	"nexark-user-backend/internal/services"
 	"nexark-user-backend/internal/utils"
 	"nexark-user-backend/pkg/database"
-	"nexark-user-backend/pkg/redis"
 	"nexark-user-backend/pkg/steam"
 	"nexark-user-backend/pkg/stripe"
 
@@ -39,16 +38,7 @@ func main() {
 		log.Fatal("Failed to connect to database:", err)
 	}
 
-	// Initialize Redis
-	_, err = redis.NewRedis(redis.RedisConfig{
-		Host:     cfg.Redis.Host,
-		Port:     cfg.Redis.Port,
-		Password: cfg.Redis.Password,
-		DB:       cfg.Redis.DB,
-	})
-	if err != nil {
-		log.Fatal("Failed to connect to Redis:", err)
-	}
+	// Redis initialization skipped for testing
 
 	// Initialize services
 	jwtService := utils.NewJWTService(cfg.JWT.Secret)
@@ -59,17 +49,21 @@ func main() {
 	userService := services.NewUserService(db, steamAuth, stripeService)
 	paymentService := services.NewPaymentService(db, stripeService, userService)
 	shopService := services.NewShopService(db)
+	serverService := services.NewServerService(db)                                       // ใหม่
+	transactionService := services.NewTransactionService(db, serverService, userService) // ใหม่
 
 	// Initialize handlers
 	authHandler := handlers.NewAuthHandler(userService, jwtService, steamAuth)
 	paymentHandler := handlers.NewPaymentHandler(paymentService, cfg.Stripe.WebhookSecret)
 	shopHandler := handlers.NewShopHandler(shopService)
+	serverHandler := handlers.NewServerHandler(serverService)                // ใหม่
+	transactionHandler := handlers.NewTransactionHandler(transactionService) // ใหม่
 
 	// Initialize middleware
 	authMiddleware := middleware.NewAuthMiddleware(jwtService)
 
 	// Setup routes
-	router := setupRoutes(authHandler, paymentHandler, shopHandler, authMiddleware)
+	router := setupRoutes(authHandler, paymentHandler, shopHandler, serverHandler, transactionHandler, authMiddleware)
 
 	// Start server
 	port := fmt.Sprintf(":%s", cfg.Server.Port)
@@ -83,6 +77,8 @@ func setupRoutes(
 	authHandler *handlers.AuthHandler,
 	paymentHandler *handlers.PaymentHandler,
 	shopHandler *handlers.ShopHandler,
+	serverHandler *handlers.ServerHandler,
+	transactionHandler *handlers.TransactionHandler,
 	authMiddleware *middleware.AuthMiddleware,
 ) *gin.Engine {
 	router := gin.New()
@@ -114,6 +110,15 @@ func setupRoutes(
 		auth.POST("/refresh", authMiddleware.RequireAuth(), authHandler.RefreshToken)
 	}
 
+	// Server routes ใหม่
+	servers := v1.Group("/servers")
+	{
+		servers.GET("/", serverHandler.GetServers)
+		servers.GET("/:server_id", serverHandler.GetServerByID)
+		servers.GET("/:server_id/info", serverHandler.GetServerDisplayInfo)
+		servers.GET("/categories", serverHandler.GetDisplayCategories)
+	}
+
 	// Payment routes
 	payments := v1.Group("/payments")
 	payments.Use(middleware.PaymentRateLimiter())
@@ -121,7 +126,16 @@ func setupRoutes(
 		payments.POST("/create-intent", authMiddleware.RequireAuth(), paymentHandler.CreatePaymentIntent)
 		payments.GET("/:payment_uuid/status", authMiddleware.RequireAuth(), paymentHandler.GetPaymentStatus)
 		payments.GET("/history", authMiddleware.RequireAuth(), paymentHandler.GetPaymentHistory)
-		payments.POST("/webhook", paymentHandler.StripeWebhook) // No auth for webhooks
+		payments.POST("/webhook", paymentHandler.StripeWebhook)
+	}
+
+	// Transaction routes ใหม่
+	transactions := v1.Group("/transactions")
+	transactions.Use(authMiddleware.RequireAuth())
+	{
+		transactions.POST("/purchase", transactionHandler.ProcessPurchase)
+		transactions.GET("/", transactionHandler.GetUserTransactions)
+		transactions.GET("/:transaction_uuid", transactionHandler.GetTransactionByID)
 	}
 
 	// Shop routes
