@@ -1,14 +1,10 @@
 import React, { useEffect, useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { Button, Dropdown } from 'antd';
+import { Dropdown } from 'antd';
 import {
   DownOutlined,
-  DesktopOutlined,
   SettingOutlined,
-  UserOutlined,
-  BugOutlined,
   GiftOutlined,
-  FileProtectOutlined,
   BookOutlined,
   CloudServerOutlined,
   CompassOutlined,
@@ -82,42 +78,6 @@ const Navbar = () => {
     return () => window.removeEventListener('scroll', onScroll);
   }, [location.pathname]);
 
-  const serverMenuItems = (servers || []).map((server) => ({
-    key: String(server.server_id),
-    label: (
-      <span>
-        <DesktopOutlined className="mr-2" />
-        {server.server_name}
-      </span>
-    ),
-    children: [
-      {
-        key: `${server.server_id}-settings`,
-        icon: <SettingOutlined />,
-        label: <Link to={`/servers/${server.server_id}/settings`}>Server Settings</Link>,
-      },
-      {
-        key: `${server.server_id}-players`,
-        icon: <UserOutlined />,
-        label: <Link to={`/servers/${server.server_id}/players`}>Players</Link>,
-      },
-      {
-        key: `${server.server_id}-dinos`,
-        icon: <BugOutlined />,
-        label: <Link to={`/servers/${server.server_id}/dinos`}>Dinos</Link>,
-      },
-      {
-        key: `${server.server_id}-items`,
-        icon: <GiftOutlined />,
-        label: <Link to={`/servers/${server.server_id}/items`}>Items</Link>,
-      },
-      {
-        key: `${server.server_id}-rules`,
-        icon: <FileProtectOutlined />,
-        label: <Link to={`/servers/${server.server_id}/rules`}>Rules</Link>,
-      },
-    ],
-  }));
 
   return (
     <nav
@@ -127,31 +87,23 @@ const Navbar = () => {
     >
       <div className="max-w-7xl mx-auto flex justify-between items-center">
         <div className="flex items-center space-x-8">
-          <div className="text-2xl font-bold text-white flex items-center">
-            <span className="text-blue-400">⭐</span>
-            <span className="ml-2">NEXArk</span>
-          </div>
-
           <div className="hidden md:flex items-center space-x-6">
-
-            {/* X25 mega-menu */}
             <Dropdown menu={{ items: x25MenuItems }} trigger={['hover']} placement="bottomLeft">
-              <a className="text-gray-300 hover:text-white transition-colors font-medium cursor-pointer" onClick={(e) => e.preventDefault()}>
+              <a className="text-gray-300 hover:text-white transition-colors font-medium cursor-pointer font-english-medium" onClick={(e) => e.preventDefault()}>
                 X25 <DownOutlined />
               </a>
             </Dropdown>
 
-            {/* X100 mega-menu */}
             <Dropdown menu={{ items: x100MenuItems }} trigger={['hover']} placement="bottomLeft">
-              <a className="text-gray-300 hover:text-white transition-colors font-medium cursor-pointer" onClick={(e) => e.preventDefault()}>
+              <a className="text-gray-300 hover:text-white transition-colors font-medium cursor-pointer font-english-medium" onClick={(e) => e.preventDefault()}>
                 X100 <DownOutlined />
               </a>
             </Dropdown>
 
-            <Link to="/shop" className="text-gray-300 hover:text-white transition-colors font-medium">
+            <Link to="/shop" className="text-gray-300 hover:text-white transition-colors font-medium font-english-medium">
               Store
             </Link>
-            <Link to="/games" className="text-gray-300 hover:text-white transition-colors font-medium">
+            <Link to="/games" className="text-gray-300 hover:text-white transition-colors font-medium font-english-medium">
               Gacha
             </Link>
           </div>
@@ -160,13 +112,13 @@ const Navbar = () => {
         <div className="flex items-center space-x-4">
           {isAuthenticated ? (
             <Link to="/profile" className="inline-flex items-center">
-              <span className="rounded-full px-6 py-2 text-white font-semibold bg-gradient-to-r from-red-500 to-orange-500 shadow hover:opacity-90 transition">
+              <span className="rounded-full px-6 py-2 text-white font-semibold bg-gradient-to-r from-blue-500 to-purple-600 shadow-lg hover:from-blue-600 hover:to-purple-700 hover:shadow-xl transition-all duration-300 transform hover:scale-105 font-english-semibold">
                 Profile
               </span>
             </Link>
           ) : (
             <Link to="/login" className="inline-flex items-center">
-              <span className="rounded-full px-6 py-2 text-white font-semibold bg-gradient-to-r from-red-500 to-orange-500 shadow hover:opacity-90 transition">
+              <span className="rounded-full px-6 py-2 text-white font-semibold bg-gradient-to-r from-blue-500 to-purple-600 shadow-lg hover:from-blue-600 hover:to-purple-700 hover:shadow-xl transition-all duration-300 transform hover:scale-105 font-english-semibold">
                 Sign in
               </span>
             </Link>

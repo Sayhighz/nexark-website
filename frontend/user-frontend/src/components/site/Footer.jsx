@@ -10,8 +10,7 @@ const Footer = () => {
       <div className="max-w-7xl mx-auto">
         <div className="flex flex-col md:flex-row justify-between items-center">
           <div className="flex items-center mb-4 md:mb-0">
-            <span className="text-primary-500 text-2xl mr-2">⭐</span>
-            <span className="text-white text-xl font-bold">NexARK</span>
+            <img src="/images/NEXLogo.png" alt="NexARK Logo" className="h-16 w-auto" />
           </div>
           <div className="flex items-center space-x-6">
             <Link to="/servers" className="text-gray-300 hover:text-white transition-colors">

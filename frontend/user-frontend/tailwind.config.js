@@ -6,6 +6,13 @@ export default {
   ],
   theme: {
     extend: {
+      fontFamily: {
+        'thai': ['SukhumvitSet', 'Noto Sans Thai', 'system-ui', 'sans-serif'],
+        'english': ['MontserratCustom', 'Montserrat', 'system-ui', 'sans-serif'],
+        'sukhumvit': ['SukhumvitSet', 'Noto Sans Thai', 'system-ui', 'sans-serif'],
+        'montserrat': ['MontserratCustom', 'Montserrat', 'system-ui', 'sans-serif'],
+        'sans': ['SukhumvitSet', 'MontserratCustom', 'Montserrat', 'system-ui', 'sans-serif']
+      },
       colors: {
         // Limited palette: black, blue, white/gray
         black: '#000000',
