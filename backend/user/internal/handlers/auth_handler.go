@@ -1,7 +1,9 @@
 package handlers
 
 import (
+	"fmt"
 	"net/http"
+	"strings"
 
 	"nexark-user-backend/internal/middleware"
 	"nexark-user-backend/internal/services"
@@ -15,13 +17,15 @@ type AuthHandler struct {
 	userService *services.UserService
 	jwtService  *utils.JWTService
 	steamAuth   *steam.SteamAuth
+	frontendURL string
 }
 
-func NewAuthHandler(userService *services.UserService, jwtService *utils.JWTService, steamAuth *steam.SteamAuth) *AuthHandler {
+func NewAuthHandler(userService *services.UserService, jwtService *utils.JWTService, steamAuth *steam.SteamAuth, frontendURL string) *AuthHandler {
 	return &AuthHandler{
 		userService: userService,
 		jwtService:  jwtService,
 		steamAuth:   steamAuth,
+		frontendURL: frontendURL,
 	}
 }
 
@@ -37,6 +41,16 @@ func (h *AuthHandler) GetLoginURL(c *gin.Context) {
 }
 
 func (h *AuthHandler) SteamCallback(c *gin.Context) {
+	// If this is a browser redirect from Steam (not an AJAX/JSON call),
+	// forward the OpenID params to the frontend callback page.
+	accept := c.GetHeader("Accept")
+	xrw := c.GetHeader("X-Requested-With")
+	if !strings.Contains(accept, "application/json") && xrw == "" && h.frontendURL != "" {
+		redirectURL := fmt.Sprintf("%s/auth/callback?%s", h.frontendURL, c.Request.URL.RawQuery)
+		c.Redirect(http.StatusFound, redirectURL)
+		return
+	}
+
 	// Verify Steam callback
 	steamID, err := h.steamAuth.VerifyCallback(c.Request.Context(), c.Request)
 	if err != nil {

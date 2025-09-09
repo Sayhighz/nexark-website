@@ -10,6 +10,8 @@ func CORS() gin.HandlerFunc {
 	config.AllowOrigins = []string{
 		"http://localhost:3000",
 		"http://localhost:3001",
+		"http://localhost:5173",
+		"http://127.0.0.1:5173",
 		"https://nexark.store",
 		"https://admin.nexark.store",
 	}
@@ -33,6 +35,12 @@ func CORS() gin.HandlerFunc {
 		"OPTIONS",
 	}
 	config.AllowCredentials = true
+
+	// Development: permissive origin check to unblock local FE (Vite) during integration
+	// NOTE: In production, remove this and rely on explicit AllowOrigins above.
+	config.AllowOriginFunc = func(origin string) bool {
+		return true
+	}
 
 	return cors.New(config)
 }

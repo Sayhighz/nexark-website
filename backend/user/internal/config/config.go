@@ -15,6 +15,7 @@ type Config struct {
 	Steam    SteamConfig
 	Stripe   StripeConfig
 	ARK      ARKConfig
+	External ExternalConfig
 }
 
 type ServerConfig struct {
@@ -61,6 +62,10 @@ type ARKConfig struct {
 	X100RCONPassword string
 }
 
+type ExternalConfig struct {
+	FrontendURL string
+}
+
 func Load() (*Config, error) {
 	_ = godotenv.Load()
 
@@ -72,11 +77,11 @@ func Load() (*Config, error) {
 			Mode: getEnv("GIN_MODE", "debug"),
 		},
 		Database: DatabaseConfig{
-			Host:     getEnv("DB_HOST", "localhost"),
+			Host:     getEnv("DB_HOST", "49.231.43.118"),
 			Port:     getEnv("DB_PORT", "3306"),
-			User:     getEnv("DB_USER", "root"),
-			Password: getEnv("DB_PASSWORD", ""),
-			Name:     getEnv("DB_NAME", "nexark_user"),
+			User:     getEnv("DB_USER", "arkdb"),
+			Password: getEnv("DB_PASSWORD", "0819897031!Sayhi"),
+			Name:     getEnv("DB_NAME", "nex_web_test"),
 		},
 		Redis: RedisConfig{
 			Host:     getEnv("REDIS_HOST", "localhost"),
@@ -88,8 +93,8 @@ func Load() (*Config, error) {
 			Secret: getEnv("JWT_SECRET", "your-secret-key"),
 		},
 		Steam: SteamConfig{
-			APIKey:    getEnv("STEAM_API_KEY", ""),
-			ReturnURL: getEnv("STEAM_RETURN_URL", ""),
+			APIKey:    getEnv("STEAM_API_KEY", "419A2278919B043A7048FC33C81B6DDE"),
+			ReturnURL: getEnv("STEAM_RETURN_URL", "http://localhost:8080/api/v1/auth/steam/callback"),
 		},
 		Stripe: StripeConfig{
 			SecretKey:      getEnv("STRIPE_SECRET_KEY", ""),
@@ -103,6 +108,9 @@ func Load() (*Config, error) {
 			X100Host:         getEnv("ARK_X100_HOST", "127.0.0.1"),
 			X100RCONPort:     getEnv("ARK_X100_RCON_PORT", "27021"),
 			X100RCONPassword: getEnv("ARK_X100_RCON_PASSWORD", ""),
+		},
+		External: ExternalConfig{
+			FrontendURL: getEnv("FRONTEND_URL", "http://localhost:5173"),
 		},
 	}, nil
 }

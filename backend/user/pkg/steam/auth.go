@@ -30,13 +30,21 @@ type SteamAPIResponse struct {
 type SteamAuth struct {
 	apiKey    string
 	returnURL string
+	realm     string
 	client    *resty.Client
 }
 
 func NewSteamAuth(apiKey, returnURL string) *SteamAuth {
+	// Derive realm (origin) from returnURL as required by Steam OpenID
+	realm := returnURL
+	if u, err := url.Parse(returnURL); err == nil && u.Scheme != "" && u.Host != "" {
+		realm = u.Scheme + "://" + u.Host
+	}
+
 	return &SteamAuth{
 		apiKey:    apiKey,
 		returnURL: returnURL,
+		realm:     realm,
 		client:    resty.New().SetTimeout(10 * time.Second),
 	}
 }
@@ -46,7 +54,8 @@ func (s *SteamAuth) GetLoginURL() string {
 	params.Set("openid.ns", "http://specs.openid.net/auth/2.0")
 	params.Set("openid.mode", "checkid_setup")
 	params.Set("openid.return_to", s.returnURL)
-	params.Set("openid.realm", s.returnURL)
+	// Steam requires realm to be the origin (scheme + host [+ port]), not the full callback path
+	params.Set("openid.realm", s.realm)
 	params.Set("openid.identity", "http://specs.openid.net/auth/2.0/identifier_select")
 	params.Set("openid.claimed_id", "http://specs.openid.net/auth/2.0/identifier_select")
 

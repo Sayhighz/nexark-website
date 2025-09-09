@@ -58,11 +58,10 @@ func main() {
 	loyaltyService := services.NewLoyaltyService(db, userService)
 	spinWheelService := services.NewSpinWheelService(db, loyaltyService, creditService)
 	dailyRewardsService := services.NewDailyRewardsService(db, loyaltyService, creditService)
-	contentService := services.NewContentService(db)
 	// jobService := services.NewJobService(db) // TODO: Implement job service usage
 
 	// Initialize handlers
-	authHandler := handlers.NewAuthHandler(userService, jwtService, steamAuth)
+	authHandler := handlers.NewAuthHandler(userService, jwtService, steamAuth, cfg.External.FrontendURL)
 	paymentHandler := handlers.NewPaymentHandler(paymentService, cfg.Stripe.WebhookSecret)
 	creditHandler := handlers.NewCreditHandler(creditService)
 	paymentMethodsHandler := handlers.NewPaymentMethodsHandler(paymentService)
@@ -74,7 +73,6 @@ func main() {
 	loyaltyHandler := handlers.NewLoyaltyHandler(loyaltyService)
 	spinWheelHandler := handlers.NewSpinWheelHandler(spinWheelService)
 	dailyRewardsHandler := handlers.NewDailyRewardsHandler(dailyRewardsService)
-	contentHandler := handlers.NewContentHandler(contentService)
 
 	// Initialize middleware
 	authMiddleware := middleware.NewAuthMiddleware(jwtService)
@@ -91,7 +89,6 @@ func main() {
 		loyaltyHandler,
 		spinWheelHandler,
 		dailyRewardsHandler,
-		contentHandler,
 		authMiddleware,
 	)
 
@@ -116,7 +113,6 @@ func setupRoutes(
 	loyaltyHandler *handlers.LoyaltyHandler,
 	spinWheelHandler *handlers.SpinWheelHandler,
 	dailyRewardsHandler *handlers.DailyRewardsHandler,
-	contentHandler *handlers.ContentHandler,
 	authMiddleware *middleware.AuthMiddleware,
 ) *gin.Engine {
 	router := gin.New()
@@ -135,7 +131,7 @@ func setupRoutes(
 			"status":    "ok",
 			"service":   "nexark-user-api",
 			"version":   "2.0.0",
-			"features":  []string{"auth", "payments", "shop", "gamification", "content", "jobs"},
+			"features":  []string{"auth", "payments", "shop", "gamification", "jobs"},
 			"timestamp": time.Now(),
 		})
 	})
@@ -269,33 +265,9 @@ func setupRoutes(
 	}
 
 	// ==========================================
-	// CONTENT MANAGEMENT ROUTES (NEW)
+	// CONTENT MANAGEMENT ROUTES - DISABLED
 	// ==========================================
-
-	// News
-	news := v1.Group("/news")
-	{
-		// Public routes
-		news.GET("/", middleware.ValidatePagination(), contentHandler.GetNews)
-		news.GET("/featured", contentHandler.GetFeaturedNews)
-		news.GET("/latest", contentHandler.GetLatestNews)
-		news.GET("/:news_id", contentHandler.GetNewsByID)
-	}
-
-	// Announcements
-	announcements := v1.Group("/announcements")
-	{
-		// Public routes
-		announcements.GET("/", middleware.ValidatePagination(), contentHandler.GetAnnouncements)
-		announcements.GET("/active", contentHandler.GetActiveAnnouncements)
-	}
-
-	// Content Search
-	content := v1.Group("/content")
-	{
-		content.GET("/search", middleware.ValidatePagination(), contentHandler.SearchContent)
-		content.GET("/summary", contentHandler.GetContentSummary)
-	}
+	// News/Announcements/Content endpoints removed per requirements.
 
 	// ==========================================
 	// ACCOUNT ROUTES (Enhanced)
@@ -359,9 +331,7 @@ func setupRoutes(
 				"Credit Management System",
 				"Shopping & Cart System",
 				"Gamification (Loyalty Points, Spin Wheel, Daily Rewards)",
-				"Content Management (News & Announcements)",
 				"Background Job Processing",
-				"Server Status Monitoring",
 			},
 			"endpoints": gin.H{
 				"authentication": []string{
@@ -422,16 +392,6 @@ func setupRoutes(
 					"GET /api/v1/games/daily",
 					"POST /api/v1/games/daily/claim",
 					"GET /api/v1/games/daily/history",
-				},
-				"content": []string{
-					"GET /api/v1/news",
-					"GET /api/v1/news/featured",
-					"GET /api/v1/news/latest",
-					"GET /api/v1/news/:id",
-					"GET /api/v1/announcements",
-					"GET /api/v1/announcements/active",
-					"GET /api/v1/content/search",
-					"GET /api/v1/content/summary",
 				},
 				"account": []string{
 					"GET /api/v1/account/profile",

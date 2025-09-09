@@ -48,20 +48,21 @@ func (s *UserService) AuthenticateWithSteam(ctx context.Context, steamID string)
 				LastLogin:   &time.Time{},
 			}
 
-			// Create Stripe customer
-			stripeCustomer, err := s.stripeService.CreateCustomer(ctx,
-				fmt.Sprintf("%s@steam.local", steamID),
-				steamUser.DisplayName,
-				map[string]string{
-					"steam_id": steamID,
-					"source":   "nexark_user",
-				},
-			)
-			if err != nil {
-				return nil, fmt.Errorf("failed to create stripe customer: %w", err)
+			// Create Stripe customer (only when Stripe is configured)
+			if s.stripeService != nil && s.stripeService.IsConfigured() {
+				stripeCustomer, err := s.stripeService.CreateCustomer(ctx,
+					fmt.Sprintf("%s@steam.local", steamID),
+					steamUser.DisplayName,
+					map[string]string{
+						"steam_id": steamID,
+						"source":   "nexark_user",
+					},
+				)
+				if err != nil {
+					return nil, fmt.Errorf("failed to create stripe customer: %w", err)
+				}
+				user.StripeCustomerID = &stripeCustomer.ID
 			}
-
-			user.StripeCustomerID = &stripeCustomer.ID
 
 			if err := s.db.Create(&user).Error; err != nil {
 				return nil, fmt.Errorf("failed to create user: %w", err)
@@ -76,6 +77,21 @@ func (s *UserService) AuthenticateWithSteam(ctx context.Context, steamID string)
 		user.DisplayName = steamUser.DisplayName
 		user.AvatarURL = &steamUser.AvatarURL
 		user.LastLogin = &now
+
+		// If user has no Stripe customer yet and Stripe is configured, create one in background of this flow.
+		if user.StripeCustomerID == nil && s.stripeService != nil && s.stripeService.IsConfigured() {
+			if stripeCustomer, err := s.stripeService.CreateCustomer(ctx,
+				fmt.Sprintf("%s@steam.local", steamID),
+				steamUser.DisplayName,
+				map[string]string{
+					"steam_id": steamID,
+					"source":   "nexark_user",
+				},
+			); err == nil {
+				user.StripeCustomerID = &stripeCustomer.ID
+			}
+			// If it fails, we keep login flowing without blocking.
+		}
 
 		if err := s.db.Save(&user).Error; err != nil {
 			return nil, fmt.Errorf("failed to update user: %w", err)

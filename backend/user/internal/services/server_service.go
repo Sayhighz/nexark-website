@@ -25,8 +25,7 @@ func NewServerService(db *gorm.DB) *ServerService {
 		rconClients: make(map[uint]*rcon.RCONClient),
 	}
 
-	// Start server monitoring
-	go service.startServerMonitoring()
+	// Server status monitoring disabled per requirements
 
 	return service
 }
@@ -151,75 +150,14 @@ func (s *ServerService) logRCONCommand(serverID uint, command string, response *
 	}
 }
 
-func (s *ServerService) startServerMonitoring() {
-	ticker := time.NewTicker(30 * time.Second)
-	defer ticker.Stop()
-
-	for {
-		select {
-		case <-ticker.C:
-			s.monitorServers()
-		}
-	}
-}
-
-func (s *ServerService) monitorServers() {
-	var servers []models.Server
-	if err := s.db.Find(&servers).Error; err != nil {
-		log.Printf("Failed to get servers for monitoring: %v", err)
-		return
-	}
-
-	for _, server := range servers {
-		go s.checkServerStatus(&server)
-	}
-}
-
-func (s *ServerService) checkServerStatus(server *models.Server) {
-	rconClient, err := s.getRCONClient(server)
-	if err != nil {
-		s.updateServerStatus(server.ServerID, false, 0)
-		return
-	}
-
-	// Execute listplayers command to get player count and verify connection
-	response, err := rconClient.ExecuteCommand("listplayers")
-	if err != nil {
-		s.updateServerStatus(server.ServerID, false, 0)
-		return
-	}
-
-	if !response.Success {
-		s.updateServerStatus(server.ServerID, false, 0)
-		return
-	}
-
-	// Parse player count from response (this is ARK-specific)
-	playerCount := s.parsePlayerCount(response.Response)
-	s.updateServerStatus(server.ServerID, true, playerCount)
-}
-
-func (s *ServerService) parsePlayerCount(response string) int {
-	// Simple implementation - in real scenario, you'd parse the actual response
-	// ARK's listplayers command returns specific format
-	// For now, return 0 as placeholder
-	return 0
-}
-
-func (s *ServerService) updateServerStatus(serverID uint, isOnline bool, playerCount int) {
-	now := time.Now()
-	updates := map[string]interface{}{
-		"is_online":       isOnline,
-		"current_players": playerCount,
-		"last_ping":       now,
-	}
-
-	if err := s.db.Model(&models.Server{}).
-		Where("server_id = ?", serverID).
-		Updates(updates).Error; err != nil {
-		log.Printf("Failed to update server status for server %d: %v", serverID, err)
-	}
-}
+/*
+Server status monitoring code removed per requirements:
+- startServerMonitoring
+- monitorServers
+- checkServerStatus
+- parsePlayerCount
+- updateServerStatus
+*/
 
 func (s *ServerService) CloseConnections() {
 	s.mutex.Lock()

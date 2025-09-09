@@ -17,7 +17,10 @@ type StripeService struct {
 }
 
 func NewStripeService(secretKey, webhookSecret string) *StripeService {
-	stripe.Key = secretKey
+	// Only set the global key when provided to avoid 401s during local dev without Stripe
+	if secretKey != "" {
+		stripe.Key = secretKey
+	}
 	return &StripeService{
 		secretKey:     secretKey,
 		webhookSecret: webhookSecret,
@@ -173,4 +176,10 @@ func (s *StripeService) CreateRefund(ctx context.Context, paymentIntentID string
 
 func (s *StripeService) GetWebhookSecret() string {
 	return s.webhookSecret
+}
+
+// IsConfigured reports whether a usable Stripe secret key is set.
+// Use this to no-op Stripe-dependent flows in non-payment environments.
+func (s *StripeService) IsConfigured() bool {
+	return s != nil && s.secretKey != ""
 }
