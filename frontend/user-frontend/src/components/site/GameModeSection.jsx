@@ -1,6 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { animate } from 'animejs';
 import TextReveal from './TextReveal';
+import SpotlightButton from '../ui/SpotlightButton';
 
 const GameModeSection = ({
   title,
@@ -112,10 +113,14 @@ const GameModeSection = ({
 
         {/* CTA Button */}
         <div className="mt-16">
-          <button className="px-12 py-4 rounded-full font-semibold text-lg transition-all duration-300 transform hover:scale-105 bg-gradient-to-r from-gray-600 to-gray-700 hover:from-gray-700 hover:to-gray-800 shadow-lg hover:shadow-gray-500/25">
+          <SpotlightButton
+            size="xl"
+            variant="primary"
+            className="rounded-full shadow-lg hover:shadow-gray-500/25"
+          >
             <span className="font-thai-semibold">เข้าสู่ </span>
             <span className="font-english-semibold">{title}</span>
-          </button>
+          </SpotlightButton>
         </div>
       </div>
     </section>

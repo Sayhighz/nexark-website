@@ -21,6 +21,7 @@ import {
 } from '@ant-design/icons';
 import { useAuthContext } from '../../contexts/AuthContext';
 import { useServers } from '../../hooks/useServers';
+import SpotlightButton from '../ui/SpotlightButton';
 
 const { Header, Content, Footer } = AntLayout;
 
@@ -196,9 +197,11 @@ const LayoutComponent = ({ children }) => {
               </Dropdown>
             </div>
           ) : (
-            <Button type="primary" size="large">
-              <Link to="/login">Login with Steam</Link>
-            </Button>
+            <Link to="/login">
+              <SpotlightButton variant="accent" size="md">
+                Login with Steam
+              </SpotlightButton>
+            </Link>
           )}
 
           {/* Mobile menu button */}

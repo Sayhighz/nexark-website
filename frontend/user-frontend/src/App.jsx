@@ -1,7 +1,8 @@
 import React from 'react';
-import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { AuthProvider } from './contexts/AuthContext';
 import Layout from './components/layout/Layout';
+import Navbar from './components/site/Navbar';
 import ProtectedRoute from './components/common/ProtectedRoute';
 
  // Pages
@@ -27,10 +28,17 @@ const Profile = () => <div className="p-8"><h1 className="text-2xl font-bold">Pr
 const Payments = () => <div className="p-8"><h1 className="text-2xl font-bold">Payments Page</h1><p>Coming soon...</p></div>;
 const Transactions = () => <div className="p-8"><h1 className="text-2xl font-bold">Transactions Page</h1><p>Coming soon...</p></div>;
 
+const GlobalNavbar = () => {
+  const location = useLocation();
+  // Show Navbar on Home page; extend this check to other routes if needed
+  return location.pathname === '/' ? <Navbar /> : null;
+};
+
 function App() {
   return (
     <AuthProvider>
       <Router>
+        <GlobalNavbar />
         <Routes>
           {/* Public routes */}
           <Route path="/" element={<Home />} />

@@ -1,8 +1,9 @@
 import React from 'react';
-import { Button, Typography } from 'antd';
+import { Typography } from 'antd';
 import { RocketOutlined, PlayCircleOutlined, DesktopOutlined } from '@ant-design/icons';
 import { Link } from 'react-router-dom';
 import { useAuthContext } from '../../contexts/AuthContext';
+import SpotlightButton from '../ui/SpotlightButton';
 
 const { Title, Paragraph } = Typography;
 
@@ -24,31 +25,38 @@ const CallToAction = () => {
 
         <div className="flex flex-col sm:flex-row gap-4 justify-center">
           {isAuthenticated ? (
-            <Button
-              type="primary"
-              size="large"
-              icon={<PlayCircleOutlined />}
-              className="bg-gradient-to-r from-blue-600 to-blue-700 border-none px-12 py-6 h-auto text-xl font-bold"
-            >
-              <Link to="/servers">Browse Servers</Link>
-            </Button>
+            <Link to="/servers">
+              <SpotlightButton
+                size="xl"
+                variant="accent"
+                className="inline-flex items-center gap-2"
+              >
+                <PlayCircleOutlined />
+                Browse Servers
+              </SpotlightButton>
+            </Link>
           ) : (
             <>
-              <Button
-                type="primary"
-                size="large"
-                icon={<RocketOutlined />}
-                className="bg-gradient-to-r from-blue-600 to-blue-700 border-none px-12 py-6 h-auto text-xl font-bold"
-              >
-                <Link to="/login">Start Your Journey</Link>
-              </Button>
-              <Button
-                size="large"
-                icon={<DesktopOutlined />}
-                className="border-white text-white hover:bg-white/10 px-12 py-6 h-auto text-xl font-bold"
-              >
-                <Link to="/servers">Explore Servers</Link>
-              </Button>
+              <Link to="/login">
+                <SpotlightButton
+                  size="xl"
+                  variant="accent"
+                  className="inline-flex items-center gap-2"
+                >
+                  <RocketOutlined />
+                  Start Your Journey
+                </SpotlightButton>
+              </Link>
+              <Link to="/servers">
+                <SpotlightButton
+                  size="xl"
+                  variant="secondary"
+                  className="inline-flex items-center gap-2"
+                >
+                  <DesktopOutlined />
+                  Explore Servers
+                </SpotlightButton>
+              </Link>
             </>
           )}
         </div>

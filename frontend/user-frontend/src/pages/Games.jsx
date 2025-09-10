@@ -3,6 +3,7 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuthContext } from '../contexts/AuthContext';
 import Loading from '../components/common/Loading';
 import ErrorMessage from '../components/common/ErrorMessage';
+import SpotlightButton from '../components/ui/SpotlightButton';
 
 const Games = () => {
   const { isAuthenticated } = useAuthContext();
@@ -146,17 +147,15 @@ const Games = () => {
             </div>
 
             {/* Spin Button */}
-            <button
+            <SpotlightButton
               onClick={handleSpin}
               disabled={!spinWheelData?.can_spin || isSpinning}
-              className={`w-full py-3 px-6 rounded-lg font-semibold text-white transition-colors ${
-                spinWheelData?.can_spin && !isSpinning
-                  ? 'bg-blue-600 hover:bg-blue-700'
-                  : 'bg-gray-400 cursor-not-allowed'
-              }`}
+              variant={spinWheelData?.can_spin && !isSpinning ? 'accent' : 'primary'}
+              size="lg"
+              className="w-full"
             >
               {isSpinning ? 'Spinning...' : spinWheelData?.can_spin ? 'Spin the Wheel!' : 'Come back tomorrow'}
-            </button>
+            </SpotlightButton>
 
             {!spinWheelData?.can_spin && spinWheelData?.next_spin_time && (
               <p className="text-sm text-gray-500 mt-2">
@@ -198,17 +197,15 @@ const Games = () => {
             )}
 
             {/* Claim Button */}
-            <button
+            <SpotlightButton
               onClick={handleClaimDaily}
               disabled={!dailyRewardData?.can_claim || loading}
-              className={`w-full py-3 px-6 rounded-lg font-semibold text-white transition-colors ${
-                dailyRewardData?.can_claim && !loading
-                  ? 'bg-green-600 hover:bg-green-700'
-                  : 'bg-gray-400 cursor-not-allowed'
-              }`}
+              variant={dailyRewardData?.can_claim && !loading ? 'accent' : 'primary'}
+              size="lg"
+              className="w-full bg-green-600 hover:bg-green-700 border-green-600"
             >
               {loading ? 'Claiming...' : dailyRewardData?.can_claim ? 'Claim Daily Reward' : 'Already claimed today'}
-            </button>
+            </SpotlightButton>
 
             {!dailyRewardData?.can_claim && (
               <p className="text-sm text-gray-500 mt-2">

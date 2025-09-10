@@ -1,8 +1,9 @@
 import React, { useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { Card, Button, Typography, Row, Col, Spin, Alert } from 'antd';
+import { Card, Typography, Row, Col, Spin, Alert } from 'antd';
 import {  DesktopOutlined, ShoppingOutlined, PlayCircleOutlined, LoginOutlined } from '@ant-design/icons';
 import { useAuthContext } from '../contexts/AuthContext';
+import SpotlightButton from '../components/ui/SpotlightButton';
 
 const { Title, Paragraph, Text } = Typography;
 
@@ -70,15 +71,15 @@ const Login = () => {
           )}
 
           {/* Login Button */}
-          <Button
-            type="primary"
-            size="large"
-            icon={<LoginOutlined />}
+          <SpotlightButton
+            variant="accent"
+            size="lg"
             onClick={handleLogin}
-            className="w-full"
+            className="w-full inline-flex items-center justify-center gap-2"
           >
+            <LoginOutlined />
             Continue with Steam
-          </Button>
+          </SpotlightButton>
         </Card>
 
         {/* Features */}

@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { useCredits } from '../hooks/useCredits';
 import Loading from '../components/common/Loading';
 import ErrorMessage from '../components/common/ErrorMessage';
+import SpotlightButton from '../components/ui/SpotlightButton';
 
 const Credits = () => {
   const {
@@ -68,12 +69,13 @@ const Credits = () => {
             Manage your credit balance and transaction history
           </p>
         </div>
-        <button
+        <SpotlightButton
           onClick={() => setShowTopUpForm(!showTopUpForm)}
-          className="btn-primary"
+          variant="accent"
+          size="md"
         >
           {showTopUpForm ? 'Cancel' : 'Top Up Credits'}
-        </button>
+        </SpotlightButton>
       </div>
 
       {/* Error Message */}
@@ -106,16 +108,17 @@ const Credits = () => {
             </div>
 
             <div className="flex gap-3">
-              <button type="submit" className="btn-primary">
+              <SpotlightButton type="submit" variant="accent" size="md">
                 Proceed to Payment
-              </button>
-              <button
+              </SpotlightButton>
+              <SpotlightButton
                 type="button"
                 onClick={() => setShowTopUpForm(false)}
-                className="btn-secondary"
+                variant="secondary"
+                size="md"
               >
                 Cancel
-              </button>
+              </SpotlightButton>
             </div>
           </form>
         </div>
@@ -167,12 +170,14 @@ const Credits = () => {
       <div className="card">
         <div className="flex items-center justify-between mb-4">
           <h2 className="text-lg font-semibold">Transaction History</h2>
-          <button
+          <SpotlightButton
             onClick={() => getTransactions()}
-            className="text-sm text-blue-600 hover:text-blue-800"
+            variant="secondary"
+            size="sm"
+            className="text-blue-600 hover:text-blue-800 bg-transparent border-transparent hover:bg-blue-50"
           >
             Refresh
-          </button>
+          </SpotlightButton>
         </div>
 
         {loading ? (
