@@ -2,7 +2,6 @@
 
 import clsx from "clsx"
 import ScrollObserver from '../ScrollObserver'
-import YouTubeEmbed from '../YouTubeEmbed'
 import StarBackground from './StarBackground'
 
 // Import images
@@ -48,11 +47,13 @@ export default function PVPSection() {
 
   return (
     <div className="min-h-screen w-screen px-8 py-12 md:px-0 relative">
-      <StarBackground />
+      <div className="fixed inset-0 z-[-1]">
+        <StarBackground />
+      </div>
 
       <div className="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8 relative z-10">
         <ScrollObserver className="relative grid grid-cols-2 gap-32">
-          {(isHidden) => (
+          {() => (
             <>
               <ScrollObserver.TriggerGroup className="py-[50vh]">
                 {items.map((item, index) => (
@@ -91,7 +92,7 @@ export default function PVPSection() {
 
                         return (
                           <div className={clsx(
-                            "transition-all duration-500 rounded-3xl overflow-hidden",
+                            "transition-all duration-500 rounded-3xl overflow-hidden scale-110",
                             {
                               "opacity-0": !isActive,
                               "opacity-100": isActive,

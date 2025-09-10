@@ -1,52 +1,16 @@
-import React, { useEffect, useState } from 'react';
+import React from 'react';
 import Marquee from 'react-fast-marquee';
 import { Element } from 'react-scroll';
-import Navbar from '../components/site/Navbar';
 import BackgroundEffects from '../components/site/BackgroundEffects';
 import Hero from '../components/site/Hero';
 import VideoBackground from '../components/site/VideoBackground';
 import StarBackground from '../components/site/StarBackground';
-import GameModeSection from '../components/site/GameModeSection';
 import PVPSection from '../components/site/PVPSection';
 import ServerModesSection from '../components/site/ServerModesSection';
 
 const Home = () => {
 
-  const x25Features = [
-    {
-      icon: '⚖️',
-      title: <span className="font-english-semibold">Balanced Gameplay</span>,
-      description: <span className="font-thai-normal">เหมาะสำหรับผู้เล่นที่ต้องการสมดุลระหว่างการเล่นและชีวิตจริง</span>
-    },
-    {
-      icon: '👥',
-      title: <span className="font-english-semibold">Community Focus</span>,
-      description: <span className="font-thai-normal">เน้นการเล่นเป็นกลุ่มและสร้างชุมชนที่แข็งแกร่ง</span>
-    },
-    {
-      icon: '🎯',
-      title: <span className="font-english-semibold">Steady Progress</span>,
-      description: <span className="font-thai-normal">ความก้าวหน้าที่มั่นคงและไม่เครียด</span>
-    }
-  ];
 
-  const x100Features = [
-    {
-      icon: '⚔️',
-      title: <span className="font-english-semibold">Hardcore Experience</span>,
-      description: <span className="font-thai-normal">สำหรับผู้เล่นที่ต้องการความท้าทายสูงสุด</span>
-    },
-    {
-      icon: '🏆',
-      title: <span className="font-english-semibold">Competitive Edge</span>,
-      description: <span className="font-thai-normal">การแข่งขันที่รุนแรงและรางวัลที่คุ้มค่า</span>
-    },
-    {
-      icon: '⚡',
-      title: <span className="font-english-semibold">Fast-Paced Action</span>,
-      description: <span className="font-thai-normal">ความเร็วในการเล่นและการตัดสินใจที่รวดเร็ว</span>
-    }
-  ];
 
   return (
     <>

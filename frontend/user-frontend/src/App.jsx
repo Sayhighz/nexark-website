@@ -9,9 +9,10 @@ import ProtectedRoute from './components/common/ProtectedRoute';
  import Home from './pages/Home';
  import Login from './pages/Login';
  import AuthCallback from './pages/AuthCallback';
+ import ServerDetails from './pages/ServerDetails';
+ import Servers from './pages/Servers';
  
  // Import actual components
- import Servers from './pages/Servers';
  import Shop from './pages/Shop';
  import Credits from './pages/Credits';
  import Games from './pages/Games';
@@ -42,18 +43,14 @@ function App() {
         <Routes>
           {/* Public routes */}
           <Route path="/" element={<Home />} />
+          <Route path="/servers" element={<Servers />} />
+          <Route path="/servers/:serverId" element={<ServerDetails />} />
           <Route path="/login" element={<Login />} />
           <Route path="/auth/callback" element={<AuthCallback />} />
 
           {/* Protected routes with layout */}
 
-          <Route path="/servers" element={
-            <ProtectedRoute>
-              <Layout>
-                <Servers />
-              </Layout>
-            </ProtectedRoute>
-          } />
+          {/* Server details moved to public route above */}
 
           <Route path="/shop" element={
             <Layout>

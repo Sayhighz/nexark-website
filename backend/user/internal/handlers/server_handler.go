@@ -2,7 +2,6 @@ package handlers
 
 import (
 	"net/http"
-	"strconv"
 
 	"nexark-user-backend/internal/services"
 
@@ -40,19 +39,7 @@ func (h *ServerHandler) GetServers(c *gin.Context) {
 
 func (h *ServerHandler) GetServerByID(c *gin.Context) {
 	serverIDStr := c.Param("server_id")
-	serverID, err := strconv.ParseUint(serverIDStr, 10, 32)
-	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{
-			"success": false,
-			"error": map[string]interface{}{
-				"code":    "INVALID_SERVER_ID",
-				"message": "Invalid server ID",
-			},
-		})
-		return
-	}
-
-	server, err := h.serverService.GetServerByID(c.Request.Context(), uint(serverID))
+	server, err := h.serverService.GetServerByIdentifier(c.Request.Context(), serverIDStr)
 	if err != nil {
 		if err.Error() == "server not found" {
 			c.JSON(http.StatusNotFound, gin.H{
@@ -85,13 +72,24 @@ func (h *ServerHandler) GetServerByID(c *gin.Context) {
 
 func (h *ServerHandler) GetServerDisplayInfo(c *gin.Context) {
 	serverIDStr := c.Param("server_id")
-	serverID, err := strconv.ParseUint(serverIDStr, 10, 32)
+	server, err := h.serverService.GetServerByIdentifier(c.Request.Context(), serverIDStr)
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{
+		if err.Error() == "server not found" {
+			c.JSON(http.StatusNotFound, gin.H{
+				"success": false,
+				"error": map[string]interface{}{
+					"code":    "SERVER_NOT_FOUND",
+					"message": "Server not found",
+				},
+			})
+			return
+		}
+
+		c.JSON(http.StatusInternalServerError, gin.H{
 			"success": false,
 			"error": map[string]interface{}{
-				"code":    "INVALID_SERVER_ID",
-				"message": "Invalid server ID",
+				"code":    "FAILED_TO_GET_SERVER",
+				"message": "Failed to retrieve server",
 			},
 		})
 		return
@@ -99,7 +97,7 @@ func (h *ServerHandler) GetServerDisplayInfo(c *gin.Context) {
 
 	categoryKey := c.Query("category")
 
-	displayInfo, err := h.serverService.GetServerDisplayInfo(c.Request.Context(), uint(serverID), categoryKey)
+	displayInfo, err := h.serverService.GetServerDisplayInfo(c.Request.Context(), server.ServerID, categoryKey)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{
 			"success": false,

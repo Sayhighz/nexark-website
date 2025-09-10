@@ -8,7 +8,7 @@ const BackgroundEffects = () => {
     // Generate random stars
     const generateStars = () => {
       const starArray = [];
-      for (let i = 0; i < 100; i++) {
+      for (let i = 0; i < 50; i++) {
         starArray.push({
           id: i,
           x: Math.random() * 100,
@@ -25,7 +25,7 @@ const BackgroundEffects = () => {
     // Generate shooting stars
     const generateShootingStars = () => {
       const shootingStarArray = [];
-      for (let i = 0; i < 3; i++) {
+      for (let i = 0; i < 2; i++) {
         shootingStarArray.push({
           id: i,
           startX: Math.random() * 50,
@@ -110,7 +110,7 @@ const BackgroundEffects = () => {
 
       {/* Floating Particles */}
       <div className="absolute inset-0">
-        {[...Array(20)].map((_, i) => (
+        {[...Array(10)].map((_, i) => (
           <div
             key={i}
             className="absolute w-1 h-1 bg-white rounded-full opacity-20"

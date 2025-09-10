@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"log"
+	"strconv"
 	"sync"
 	"time"
 
@@ -43,6 +44,25 @@ func (s *ServerService) GetServers(ctx context.Context) ([]models.Server, error)
 func (s *ServerService) GetServerByID(ctx context.Context, serverID uint) (*models.Server, error) {
 	var server models.Server
 	err := s.db.Where("server_id = ?", serverID).First(&server).Error
+	if err != nil {
+		if err == gorm.ErrRecordNotFound {
+			return nil, fmt.Errorf("server not found")
+		}
+		return nil, fmt.Errorf("failed to get server: %w", err)
+	}
+
+	return &server, nil
+}
+
+func (s *ServerService) GetServerByIdentifier(ctx context.Context, identifier string) (*models.Server, error) {
+	// Try parsing as uint first
+	if id, err := strconv.ParseUint(identifier, 10, 32); err == nil {
+		return s.GetServerByID(ctx, uint(id))
+	}
+
+	// Fallback to query by server_name
+	var server models.Server
+	err := s.db.Where("server_name = ?", identifier).First(&server).Error
 	if err != nil {
 		if err == gorm.ErrRecordNotFound {
 			return nil, fmt.Errorf("server not found")

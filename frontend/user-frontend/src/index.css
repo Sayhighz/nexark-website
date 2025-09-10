@@ -1,12 +1,13 @@
 @import 'antd/dist/reset.css';
 
+/* Import Google Fonts as fallback */
+@import url('https://fonts.googleapis.com/css2?family=Noto+Sans+Thai:wght@300;400;500;600;700&family=Montserrat:wght@300;400;500;600;700;800&display=swap');
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
 /* Font Face Declarations */
-/* Import Google Fonts as fallback */
-@import url('https://fonts.googleapis.com/css2?family=Noto+Sans+Thai:wght@300;400;500;600;700&family=Montserrat:wght@300;400;500;600;700;800&display=swap');
 
 /* Use fonts from public folder - more reliable in Vite */
 @font-face {
@@ -446,7 +447,7 @@
 
   /* Enhanced smooth scroll behavior for better section transitions */
   html {
-    scroll-behavior: smooth;
+    scroll-behavior: auto;
     scroll-padding-top: 2rem;
     /* Enable momentum scrolling on iOS */
     -webkit-overflow-scrolling: touch;
@@ -470,7 +471,7 @@
     -webkit-overflow-scrolling: touch;
     overscroll-behavior: contain;
     /* Smoother scrolling on all devices */
-    scroll-behavior: smooth;
+    scroll-behavior: auto;
   }
 
   /* Custom scrollbar styling for webkit browsers */

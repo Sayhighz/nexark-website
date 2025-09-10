@@ -37,7 +37,7 @@ const VideoBackground = () => {
         muted
         loop
         playsInline
-        preload="auto"
+        preload="metadata"
         aria-hidden="true"
         disablePictureInPicture
         controlsList="nodownload nofullscreen noremoteplayback"

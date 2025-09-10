@@ -91,14 +91,14 @@ const ServerShowcase = () => {
           title="X25 Galaxy"
           icon={<span role="img" aria-label="earth">🌍</span>}
           rates={rates25}
-          to="/servers?type=x25"
+          to="/servers/x25"
           variant="x25"
         />
         <RateCard
           title="X100 Nebula"
           icon={<span role="img" aria-label="nebula">🌌</span>}
           rates={rates100}
-          to="/servers?type=x100"
+          to="/servers/x100"
           variant="x100"
         />
       </div>
