@@ -1,5 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { animate } from 'animejs';
+import TextReveal from './TextReveal';
 
 const GameModeSection = ({
   title,
@@ -80,9 +81,18 @@ const GameModeSection = ({
         </h2>
 
         {/* Description */}
-        <p className="text-xl md:text-2xl text-gray-300 mb-16 max-w-4xl mx-auto leading-relaxed font-thai-normal">
+        <p className="text-xl md:text-2xl text-gray-300 mb-8 max-w-4xl mx-auto leading-relaxed font-thai-normal">
           {description}
         </p>
+
+        {/* Text Reveal */}
+        <div className="mb-16">
+          <TextReveal
+            text="Experience the ultimate ARK Survival Evolved gameplay with enhanced features and competitive challenges"
+            className="text-white text-lg md:text-xl lg:text-2xl font-english-normal text-center"
+            delay={0.08}
+          />
+        </div>
 
         {/* Features */}
         <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8 max-w-5xl mx-auto">

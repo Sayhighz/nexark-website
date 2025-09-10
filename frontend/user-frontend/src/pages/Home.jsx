@@ -1,4 +1,6 @@
 import React from 'react';
+import Marquee from 'react-fast-marquee';
+import { Element } from 'react-scroll';
 import Navbar from '../components/site/Navbar';
 import BackgroundEffects from '../components/site/BackgroundEffects';
 import Hero from '../components/site/Hero';
@@ -112,62 +114,95 @@ const Home = () => {
       </div>
 
       {/* Hero Section with Video Background */}
-      <section className="min-h-screen relative overflow-hidden bg-black smooth-scroll-section scroll-optimized">
-        <VideoBackground />
-        <BackgroundEffects />
-        
-        <div className="relative z-20">
-          <Navbar />
-          <Hero />
-        </div>
-        
-        {/* Subtle seamless transition */}
-        <div className="absolute bottom-0 left-0 right-0 h-8 bg-gradient-to-t from-black/80 to-transparent z-10 pointer-events-none"></div>
-      </section>
+      <Element name="hero" className="element">
+        <section className="min-h-screen relative overflow-hidden bg-black smooth-scroll-section scroll-optimized">
+          <VideoBackground />
+          <BackgroundEffects />
+
+          <div className="relative z-20">
+            <Navbar />
+            <Hero />
+          </div>
+
+          {/* Subtle seamless transition */}
+          <div className="absolute bottom-0 left-0 right-0 h-8 bg-gradient-to-t from-black/80 to-transparent z-10 pointer-events-none"></div>
+        </section>
+      </Element>
+
+      {/* Marquee Section */}
+      <Element name="marquee" className="element">
+        <section className="relative bg-black py-16 overflow-hidden smooth-scroll-section scroll-optimized">
+          {/* Subtle seamless transition from top */}
+          <div className="absolute top-0 left-0 right-0 h-8 bg-gradient-to-b from-black/80 to-transparent z-5 pointer-events-none"></div>
+
+          <div className="relative z-10">
+            <Marquee
+              speed={40}
+              gradient={false}
+              pauseOnHover={true}
+              className="text-white font-english-bold text-2xl"
+            >
+              <span className="mx-12">EPIC PVP BATTLES AWAIT - JOIN THE ULTIMATE COMBAT EXPERIENCE</span>
+              <span className="mx-12">COMPETE AGAINST THE BEST - CLIMB THE LEADERBOARDS</span>
+              <span className="mx-12">MASTER YOUR SKILLS - BECOME A PVP LEGEND</span>
+              <span className="mx-12">FAST-PACED ACTION - NON-STOP ADRENALINE RUSH</span>
+              <span className="mx-12">DOMINATE THE BATTLEFIELD - PROVE YOUR WORTH</span>
+              <span className="mx-12">INTENSE PVP MODES - X25 & X100 SERVERS</span>
+            </Marquee>
+          </div>
+
+          {/* Subtle seamless transition to bottom */}
+          <div className="absolute bottom-0 left-0 right-0 h-8 bg-gradient-to-t from-black/80 to-transparent z-5 pointer-events-none"></div>
+        </section>
+      </Element>
 
       {/* X25 Section */}
-      <section id="x25-section" className="relative min-h-screen overflow-hidden transform-gpu bg-black smooth-scroll-section scroll-optimized">
-        <StarBackground enableShootingStars={false} />
-        
-        {/* Subtle seamless transition from top */}
-        <div className="absolute top-0 left-0 right-0 h-8 bg-gradient-to-b from-black/80 to-transparent z-5 pointer-events-none"></div>
-        
-        <div className="relative z-10 transform transition-all duration-1000 ease-out">
-          <GameModeSection
-            mode="x25"
-            title={<span className="font-english-bold">X25 Server</span>}
-            playerType={<span className="font-thai-semibold">ถ้าคุณเป็นคนแบบนี้ต้องเล่น X25 นะ!</span>}
-            description={<span className="font-thai-normal">เหมาะสำหรับผู้เล่นที่ชอบความสมดุล ไม่รีบร้อน และต้องการเพลิดเพลินกับเกมในแบบของตัวเอง พร้อมสร้างเพื่อนใหม่ในชุมชน</span>}
-            features={x25Features}
-            bgGradient="transparent"
-          />
-        </div>
-        
-        {/* Subtle seamless transition to bottom */}
-        <div className="absolute bottom-0 left-0 right-0 h-8 bg-gradient-to-t from-black/80 to-transparent z-5 pointer-events-none"></div>
-      </section>
+      <Element name="x25" className="element">
+        <section id="x25-section" className="relative min-h-screen overflow-hidden transform-gpu bg-black smooth-scroll-section scroll-optimized">
+          <StarBackground enableShootingStars={false} />
+
+          {/* Subtle seamless transition from top */}
+          <div className="absolute top-0 left-0 right-0 h-8 bg-gradient-to-b from-black/80 to-transparent z-5 pointer-events-none"></div>
+
+          <div className="relative z-10 transform transition-all duration-1000 ease-out">
+            <GameModeSection
+              mode="x25"
+              title={<span className="font-english-bold">X25 Server</span>}
+              playerType={<span className="font-thai-semibold">ถ้าคุณเป็นคนแบบนี้ต้องเล่น X25 นะ!</span>}
+              description={<span className="font-thai-normal">เหมาะสำหรับผู้เล่นที่ชอบความสมดุล ไม่รีบร้อน และต้องการเพลิดเพลินกับเกมในแบบของตัวเอง พร้อมสร้างเพื่อนใหม่ในชุมชน</span>}
+              features={x25Features}
+              bgGradient="transparent"
+            />
+          </div>
+
+          {/* Subtle seamless transition to bottom */}
+          <div className="absolute bottom-0 left-0 right-0 h-8 bg-gradient-to-t from-black/80 to-transparent z-5 pointer-events-none"></div>
+        </section>
+      </Element>
 
       {/* X100 Section */}
-      <section id="x100-section" className="relative min-h-screen overflow-hidden transform-gpu bg-black smooth-scroll-section scroll-optimized">
-        <StarBackground enableShootingStars={false} />
-        
-        {/* Subtle seamless transition from top */}
-        <div className="absolute top-0 left-0 right-0 h-8 bg-gradient-to-b from-black/80 to-transparent z-5 pointer-events-none"></div>
-        
-        <div className="relative z-10 transform transition-all duration-1000 ease-out">
-          <GameModeSection
-            mode="x100"
-            title={<span className="font-english-bold">X100 Server</span>}
-            playerType={<span className="font-thai-semibold">ถ้าเป็นคนแบบนี้ให้เล่น X100!</span>}
-            description={<span className="font-thai-normal">สำหรับผู้เล่นที่ชอบความเร็ว ความท้าทาย และการแข่งขันสูง พร้อมที่จะใช้เวลาและทักษะเพื่อเป็นที่สุดของเซิร์ฟเวอร์</span>}
-            features={x100Features}
-            bgGradient="transparent"
-          />
-        </div>
-        
-        {/* Subtle seamless transition to bottom */}
-        <div className="absolute bottom-0 left-0 right-0 h-8 bg-gradient-to-t from-black/80 to-transparent z-5 pointer-events-none"></div>
-      </section>
+      <Element name="x100" className="element">
+        <section id="x100-section" className="relative min-h-screen overflow-hidden transform-gpu bg-black smooth-scroll-section scroll-optimized">
+          <StarBackground enableShootingStars={false} />
+
+          {/* Subtle seamless transition from top */}
+          <div className="absolute top-0 left-0 right-0 h-8 bg-gradient-to-b from-black/80 to-transparent z-5 pointer-events-none"></div>
+
+          <div className="relative z-10 transform transition-all duration-1000 ease-out">
+            <GameModeSection
+              mode="x100"
+              title={<span className="font-english-bold">X100 Server</span>}
+              playerType={<span className="font-thai-semibold">ถ้าเป็นคนแบบนี้ให้เล่น X100!</span>}
+              description={<span className="font-thai-normal">สำหรับผู้เล่นที่ชอบความเร็ว ความท้าทาย และการแข่งขันสูง พร้อมที่จะใช้เวลาและทักษะเพื่อเป็นที่สุดของเซิร์ฟเวอร์</span>}
+              features={x100Features}
+              bgGradient="transparent"
+            />
+          </div>
+
+          {/* Subtle seamless transition to bottom */}
+          <div className="absolute bottom-0 left-0 right-0 h-8 bg-gradient-to-t from-black/80 to-transparent z-5 pointer-events-none"></div>
+        </section>
+      </Element>
     </div>
   );
 };

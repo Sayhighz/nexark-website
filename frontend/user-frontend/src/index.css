@@ -450,8 +450,8 @@
     scroll-padding-top: 2rem;
     /* Enable momentum scrolling on iOS */
     -webkit-overflow-scrolling: touch;
-    /* Custom scrolling timing */
-    scroll-snap-type: y proximity;
+    /* Removed scroll snap for natural scrolling */
+    overscroll-behavior-y: contain;
   }
 
   /* Enhanced smooth scrolling for body */
@@ -466,6 +466,11 @@
     transform: translateZ(0);
     backface-visibility: hidden;
     perspective: 1000px;
+    /* Enhanced scroll momentum */
+    -webkit-overflow-scrolling: touch;
+    overscroll-behavior: contain;
+    /* Smoother scrolling on all devices */
+    scroll-behavior: smooth;
   }
 
   /* Custom scrollbar styling for webkit browsers */
@@ -491,7 +496,6 @@
   /* Smooth scroll sections */
   .smooth-scroll-section {
     scroll-margin-top: 2rem;
-    scroll-snap-align: start;
   }
 
   /* Better scroll performance for animated elements */
