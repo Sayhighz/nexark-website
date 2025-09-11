@@ -1,6 +1,55 @@
 package models
 
-import "time"
+import (
+	"database/sql/driver"
+	"encoding/json"
+	"fmt"
+	"time"
+)
+
+// JSONMap is a custom type for handling JSON data from database
+type JSONMap map[string]interface{}
+
+// Value implements the driver.Valuer interface for database storage
+func (j JSONMap) Value() (driver.Value, error) {
+	if j == nil {
+		return nil, nil
+	}
+	return json.Marshal(j)
+}
+
+// Scan implements the sql.Scanner interface for database retrieval
+func (j *JSONMap) Scan(value interface{}) error {
+	if value == nil {
+		*j = nil
+		return nil
+	}
+
+	var bytes []byte
+	switch v := value.(type) {
+	case []byte:
+		bytes = v
+	case string:
+		bytes = []byte(v)
+	default:
+		return fmt.Errorf("cannot scan %T into JSONMap", value)
+	}
+
+	if len(bytes) == 0 {
+		*j = nil
+		return nil
+	}
+
+	return json.Unmarshal(bytes, j)
+}
+
+// MarshalJSON implements the json.Marshaler interface
+func (j JSONMap) MarshalJSON() ([]byte, error) {
+	if j == nil {
+		return []byte("null"), nil
+	}
+	return json.Marshal(map[string]interface{}(j))
+}
 
 type Server struct {
 	ServerID       uint       `gorm:"primaryKey;column:server_id" json:"server_id"`
@@ -14,6 +63,7 @@ type Server struct {
 	CurrentPlayers int        `gorm:"column:current_players;default:0" json:"current_players"`
 	MaxPlayers     int        `gorm:"column:max_players;default:70" json:"max_players"`
 	LastPing       *time.Time `gorm:"column:last_ping" json:"last_ping"`
+	Details        JSONMap    `gorm:"column:details;type:json" json:"details,omitempty"`
 }
 
 func (Server) TableName() string {
@@ -21,11 +71,12 @@ func (Server) TableName() string {
 }
 
 type ServerDisplayCategory struct {
-	CategoryID   uint   `gorm:"primaryKey;column:category_id" json:"category_id"`
-	CategoryName string `gorm:"column:category_name" json:"category_name"`
-	CategoryKey  string `gorm:"uniqueIndex;column:category_key" json:"category_key"`
-	DisplayOrder int    `gorm:"column:display_order;default:0" json:"display_order"`
-	IsActive     bool   `gorm:"column:is_active;default:true" json:"is_active"`
+	CategoryID   uint    `gorm:"primaryKey;column:category_id" json:"category_id"`
+	CategoryName string  `gorm:"column:category_name" json:"category_name"`
+	CategoryKey  string  `gorm:"uniqueIndex;column:category_key" json:"category_key"`
+	DisplayOrder int     `gorm:"column:display_order;default:0" json:"display_order"`
+	IsActive     bool    `gorm:"column:is_active;default:true" json:"is_active"`
+	Details      JSONMap `gorm:"column:details;type:json" json:"details,omitempty"`
 }
 
 func (ServerDisplayCategory) TableName() string {

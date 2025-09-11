@@ -46,16 +46,21 @@ export const useCredits = () => {
       setLoading(true);
       setError(null);
       const response = await creditService.topUp(topUpData);
-      // Refresh balance after topup
-      await getBalance();
-      return response.data;
+      
+      // Don't refresh balance immediately since user will be redirected to Stripe
+      // Balance will be refreshed after successful payment callback
+      
+      return {
+        ...response.data,
+        checkout_url: response.data.checkout_url
+      };
     } catch (err) {
       setError(err.response?.data?.error?.message || 'Topup failed');
       throw err;
     } finally {
       setLoading(false);
     }
-  }, [getBalance]);
+  }, []);
 
   // Get credit transactions
   const getTransactions = useCallback(async (params = {}) => {

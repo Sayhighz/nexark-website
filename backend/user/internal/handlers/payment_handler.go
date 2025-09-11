@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"fmt"
 	"io"
 	"net/http"
 	"strconv"
@@ -194,6 +195,7 @@ func (h *PaymentHandler) GetPaymentHistory(c *gin.Context) {
 func (h *PaymentHandler) StripeWebhook(c *gin.Context) {
 	body, err := io.ReadAll(c.Request.Body)
 	if err != nil {
+		fmt.Printf("[SECURITY] Failed to read webhook body from IP %s\n", c.ClientIP())
 		c.JSON(http.StatusBadRequest, gin.H{
 			"success": false,
 			"error": map[string]interface{}{
@@ -205,8 +207,21 @@ func (h *PaymentHandler) StripeWebhook(c *gin.Context) {
 	}
 
 	signature := c.GetHeader("Stripe-Signature")
+	if signature == "" {
+		fmt.Printf("[SECURITY] Missing Stripe signature from IP %s\n", c.ClientIP())
+		c.JSON(http.StatusBadRequest, gin.H{
+			"success": false,
+			"error": map[string]interface{}{
+				"code":    "MISSING_SIGNATURE",
+				"message": "Missing webhook signature",
+			},
+		})
+		return
+	}
+
 	event, err := webhook.ConstructEvent(body, signature, h.webhookSecret)
 	if err != nil {
+		fmt.Printf("[SECURITY] Invalid webhook signature from IP %s: %v\n", c.ClientIP(), err)
 		c.JSON(http.StatusBadRequest, gin.H{
 			"success": false,
 			"error": map[string]interface{}{
@@ -217,20 +232,23 @@ func (h *PaymentHandler) StripeWebhook(c *gin.Context) {
 		return
 	}
 
+	fmt.Printf("[INFO] Processing webhook event %s of type %s\n", event.ID, event.Type)
+
 	// Process webhook event
 	err = h.paymentService.ProcessWebhook(c.Request.Context(), &event)
 	if err != nil {
+		fmt.Printf("[ERROR] Failed to process webhook %s: %v\n", event.ID, err)
 		c.JSON(http.StatusInternalServerError, gin.H{
 			"success": false,
 			"error": map[string]interface{}{
 				"code":    "WEBHOOK_PROCESSING_FAILED",
 				"message": "Failed to process webhook",
-				"details": err.Error(),
 			},
 		})
 		return
 	}
 
+	fmt.Printf("[SUCCESS] Webhook %s processed successfully\n", event.ID)
 	c.JSON(http.StatusOK, gin.H{
 		"received": true,
 	})

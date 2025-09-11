@@ -75,7 +75,7 @@ func (h *CreditHandler) TopUp(c *gin.Context) {
 		return
 	}
 
-	payment, err := h.creditService.TopUpCredits(c.Request.Context(), userID, req)
+	payment, checkoutURL, err := h.creditService.TopUpCredits(c.Request.Context(), userID, req)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{
 			"success": false,
@@ -90,11 +90,13 @@ func (h *CreditHandler) TopUp(c *gin.Context) {
 	c.JSON(http.StatusCreated, gin.H{
 		"success": true,
 		"data": gin.H{
-			"payment_uuid":  payment.PaymentUUID,
-			"client_secret": payment.StripeClientSecret,
-			"amount":        payment.Amount,
-			"currency":      payment.Currency,
-			"status":        payment.PaymentStatus,
+			"payment_uuid":   payment.PaymentUUID,
+			"checkout_url":   checkoutURL,
+			"amount":         payment.Amount,
+			"currency":       payment.Currency,
+			"payment_method": payment.PaymentMethod,
+			"status":         payment.PaymentStatus,
+			"expires_at":     payment.ExpiresAt,
 		},
 	})
 }

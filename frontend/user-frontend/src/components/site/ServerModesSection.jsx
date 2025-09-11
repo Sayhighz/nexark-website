@@ -1,8 +1,9 @@
 "use client"
 
 import React from 'react'
-import { Fade, Slide } from 'react-awesome-reveal'
+import clsx from "clsx"
 import { SpotlightCard } from '../ui/SpotlightCard'
+import { ScrollReveal } from '../ScrollReveal'
 import { AuditOutlined, TeamOutlined, AimOutlined, TrophyOutlined, ThunderboltOutlined, FireOutlined } from '@ant-design/icons'
 
 // Import images
@@ -15,29 +16,43 @@ export default function ServerModesSection() {
   return (
     <div className="min-h-screen w-screen px-8 py-12 md:px-0 relative">
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-        <Fade direction="up" duration={1000}>
-          <div className="text-center mb-16">
-            <h2 className="text-4xl md:text-6xl font-bold text-white mb-4">
-              Choose Your Server
-            </h2>
-            <p className="text-xl text-white/70 max-w-3xl mx-auto">
-              Select the server that matches your playstyle and join the ultimate gaming experience
-            </p>
-          </div>
-        </Fade>
+        <ScrollReveal once={true} trigger="visible" offset={100} className="[--duration:1000ms]">
+          {(isActive) => (
+            <div
+              className={clsx(
+                { "translate-y-8 opacity-0": !isActive },
+                "text-center mb-16 transition-[transform,opacity] duration-[--duration]",
+              )}>
+              <h2 className="text-4xl md:text-6xl font-bold text-white mb-4">
+                Choose Your Server
+              </h2>
+              <p className="text-xl text-white/70 max-w-3xl mx-auto">
+                Select the server that matches your playstyle and join the ultimate gaming experience
+              </p>
+            </div>
+          )}
+        </ScrollReveal>
 
-        <Slide direction="up" duration={1200} delay={300}>
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+        <ScrollReveal once={true} trigger="visible" offset={50} className="[--duration:1200ms]">
+          {(isActive) => (
+            <div
+              className={clsx(
+                { "translate-y-12 opacity-0": !isActive },
+                "grid grid-cols-1 lg:grid-cols-2 gap-8 transition-[transform,opacity] duration-[--duration] delay-300",
+              )}>
             {/* X25 Card */}
-          <SpotlightCard
-            hsl
-            from="#1cd1c6"
-            via="#407cff"
-            hslMin={200}
-            hslMax={240}
-            size={400}
-            className="relative mx-auto w-full max-w-2xl rounded-[--radius] bg-white/10 p-8 shadow-xl shadow-white/2.5 [--radius:theme(borderRadius.2xl)] group hover:scale-105 transition-transform duration-300"
-          >
+            <SpotlightCard
+              hsl
+              from="#1cd1c6"
+              via="#407cff"
+              hslMin={200}
+              hslMax={240}
+              size={400}
+              className={clsx(
+                isActive ? "delay-[250ms]" : "translate-y-8 opacity-0",
+                "relative mx-auto w-full max-w-2xl rounded-[--radius] bg-white/10 p-8 shadow-xl shadow-white/2.5 [--radius:theme(borderRadius.2xl)] group hover:scale-105 transition-[transform,opacity,scale] duration-[--duration]"
+              )}
+            >
             <div className="absolute inset-px rounded-[calc(var(--radius)-1px)] bg-zinc-800"></div>
 
             <div className="absolute inset-0 bg-[radial-gradient(40%_128px_at_50%_0%,theme(backgroundColor.white/5%),transparent)]"></div>
@@ -94,16 +109,19 @@ export default function ServerModesSection() {
                 </span>
               </a>
             </div>
-          </SpotlightCard>
+              </SpotlightCard>
 
-          {/* X100 Card */}
-          <SpotlightCard
-            hsl
-            hslMin={0}
-            hslMax={20}
-            size={400}
-            className="relative mx-auto w-full max-w-2xl rounded-[--radius] bg-white/10 p-8 shadow-xl shadow-white/2.5 [--radius:theme(borderRadius.2xl)] group hover:scale-105 transition-transform duration-300"
-          >
+              {/* X100 Card */}
+              <SpotlightCard
+                hsl
+                hslMin={0}
+                hslMax={20}
+                size={400}
+                className={clsx(
+                  isActive ? "delay-[500ms]" : "translate-y-8 opacity-0",
+                  "relative mx-auto w-full max-w-2xl rounded-[--radius] bg-white/10 p-8 shadow-xl shadow-white/2.5 [--radius:theme(borderRadius.2xl)] group hover:scale-105 transition-[transform,opacity,scale] duration-[--duration]"
+                )}
+              >
             <div className="absolute inset-px rounded-[calc(var(--radius)-1px)] bg-zinc-800"></div>
 
             <div className="absolute inset-0 bg-[radial-gradient(40%_128px_at_50%_0%,theme(backgroundColor.white/5%),transparent)]"></div>
@@ -160,9 +178,10 @@ export default function ServerModesSection() {
                 </span>
               </a>
             </div>
-          </SpotlightCard>
-          </div>
-        </Slide>
+              </SpotlightCard>
+            </div>
+          )}
+        </ScrollReveal>
       </div>
     </div>
   )

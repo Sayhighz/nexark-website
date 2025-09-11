@@ -13,6 +13,9 @@ export default {
         'montserrat': ['MontserratCustom', 'Montserrat', 'system-ui', 'sans-serif'],
         'sans': ['SukhumvitSet', 'MontserratCustom', 'Montserrat', 'system-ui', 'sans-serif']
       },
+      textShadow: {
+        sm: "rgba(255, 255, 255, 0.35) 1px 1px 12px",
+      },
       colors: {
         // Limited palette: black, blue, white/gray
         black: '#000000',
@@ -44,5 +47,16 @@ export default {
       }
     },
   },
-  plugins: [],
+  plugins: [
+    function ({ matchUtilities, theme }) {
+      matchUtilities(
+        {
+          "text-shadow": (value) => ({
+            textShadow: value,
+          }),
+        },
+        { values: theme("textShadow") },
+      )
+    },
+  ],
 }

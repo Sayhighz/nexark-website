@@ -5,6 +5,7 @@ import (
 	"fmt"
 
 	"github.com/stripe/stripe-go/v75"
+	checkoutsession "github.com/stripe/stripe-go/v75/checkout/session"
 	"github.com/stripe/stripe-go/v75/customer"
 	"github.com/stripe/stripe-go/v75/paymentintent"
 	"github.com/stripe/stripe-go/v75/paymentmethod"
@@ -172,6 +173,52 @@ func (s *StripeService) CreateRefund(ctx context.Context, paymentIntentID string
 	}
 
 	return ref, nil
+}
+
+// Checkout Session support for hosted payments (e.g., PromptPay, Card)
+type CreateCheckoutSessionParams struct {
+	CustomerID         string
+	SuccessURL         string
+	CancelURL          string
+	Amount             int64
+	Currency           string
+	PaymentMethodTypes []string
+	Metadata           map[string]string
+	Description        string
+}
+
+func (s *StripeService) CreateCheckoutSession(ctx context.Context, p CreateCheckoutSessionParams) (*stripe.CheckoutSession, error) {
+	params := &stripe.CheckoutSessionParams{
+		Mode:               stripe.String(string(stripe.CheckoutSessionModePayment)),
+		SuccessURL:         stripe.String(p.SuccessURL),
+		CancelURL:          stripe.String(p.CancelURL),
+		Customer:           stripe.String(p.CustomerID),
+		PaymentMethodTypes: stripe.StringSlice(p.PaymentMethodTypes),
+		LineItems: []*stripe.CheckoutSessionLineItemParams{
+			{
+				PriceData: &stripe.CheckoutSessionLineItemPriceDataParams{
+					Currency: stripe.String(p.Currency),
+					ProductData: &stripe.CheckoutSessionLineItemPriceDataProductDataParams{
+						Name: stripe.String(p.Description),
+					},
+					UnitAmount: stripe.Int64(p.Amount),
+				},
+				Quantity: stripe.Int64(1),
+			},
+		},
+		PaymentIntentData: &stripe.CheckoutSessionPaymentIntentDataParams{
+			Metadata: p.Metadata,
+		},
+	}
+
+	// Expand payment_intent to get the PaymentIntent object in the response
+	params.Expand = stripe.StringSlice([]string{"payment_intent"})
+
+	sess, err := checkoutsession.New(params)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create checkout session: %w", err)
+	}
+	return sess, nil
 }
 
 func (s *StripeService) GetWebhookSecret() string {

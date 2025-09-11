@@ -463,10 +463,6 @@
     /* Better text rendering during scroll */
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
-    /* Enable hardware acceleration */
-    transform: translateZ(0);
-    backface-visibility: hidden;
-    perspective: 1000px;
     /* Enhanced scroll momentum */
     -webkit-overflow-scrolling: touch;
     overscroll-behavior: contain;

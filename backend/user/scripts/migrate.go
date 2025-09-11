@@ -5,6 +5,8 @@ import (
 	"io/ioutil"
 	"log"
 	"os"
+	"path/filepath"
+	"sort"
 	"strings"
 
 	"nexark-user-backend/internal/config"
@@ -30,37 +32,62 @@ func main() {
 		log.Fatal("Failed to connect to database:", err)
 	}
 
-	// Read and execute migration file
-	migrationPath := "migrations/001_initial_schema.sql"
-	if len(os.Args) > 1 {
-		migrationPath = os.Args[1]
-	}
-
-	content, err := ioutil.ReadFile(migrationPath)
-	if err != nil {
-		log.Fatal("Failed to read migration file:", err)
-	}
-
+	// Prepare SQL executor
 	sqlDB, err := db.DB()
 	if err != nil {
 		log.Fatal("Failed to get underlying sql.DB:", err)
 	}
 
-	// Split SQL content into individual statements
-	sqlStatements := strings.Split(string(content), ";")
-
-	for _, stmt := range sqlStatements {
-		stmt = strings.TrimSpace(stmt)
-		if stmt == "" {
-			continue
+	execSQLFile := func(path string) error {
+		content, err := ioutil.ReadFile(path)
+		if err != nil {
+			return fmt.Errorf("failed to read migration file %s: %w", path, err)
 		}
 
-		_, err = sqlDB.Exec(stmt)
-		if err != nil {
-			log.Printf("Failed to execute statement: %s", stmt)
-			log.Fatal("Failed to execute migration:", err)
+		statements := strings.Split(string(content), ";")
+		for _, stmt := range statements {
+			stmt = strings.TrimSpace(stmt)
+			if stmt == "" {
+				continue
+			}
+			if _, err := sqlDB.Exec(stmt); err != nil {
+				log.Printf("Failed to execute statement from %s: %s", path, stmt)
+				return fmt.Errorf("failed to execute migration from %s: %w", path, err)
+			}
+		}
+		fmt.Printf("Executed migration: %s\n", path)
+		return nil
+	}
+
+	// If a specific file is provided, run only that
+	if len(os.Args) > 1 {
+		migrationPath := os.Args[1]
+		if err := execSQLFile(migrationPath); err != nil {
+			log.Fatal(err)
+		}
+		fmt.Println("Migration executed successfully!")
+		return
+	}
+
+	// Otherwise run all .sql files in migrations directory in lexicographical order
+	files, err := ioutil.ReadDir("migrations")
+	if err != nil {
+		log.Fatal("Failed to read migrations directory:", err)
+	}
+
+	var sqlFiles []string
+	for _, f := range files {
+		if !f.IsDir() && strings.HasSuffix(f.Name(), ".sql") {
+			sqlFiles = append(sqlFiles, filepath.Join("migrations", f.Name()))
+		}
+	}
+	sort.Strings(sqlFiles)
+
+	for _, f := range sqlFiles {
+		if err := execSQLFile(f); err != nil {
+			log.Fatal(err)
 		}
 	}
 
-	fmt.Println("Migration executed successfully!")
+	fmt.Println("All migrations executed successfully!")
 }

@@ -1,83 +1,148 @@
-"use client"
-
-import React, { createContext, useContext, useEffect, useRef, useState } from 'react'
+import { createContext, useEffect, useRef, useState, useContext, useMemo } from "react"
+import { usePrevious, useWindowScroll, useWindowSize } from "react-use"
 
 const ScrollObserverContext = createContext()
+const TriggerGroupContext = createContext()
+const ReactorGroupContext = createContext()
 
-export function ScrollObserver({ children, className }) {
-  const [activeId, setActiveId] = useState(null)
-  const [isHidden, setIsHidden] = useState(true)
-  const containerRef = useRef(null)
+function Root({ as = "div", children, className, ...props }) {
+  const Component = as;
+  const [active, setActive] = useState(null)
+  const previous = usePrevious(active)
+  const isHidden = useMemo(() => active === null, [active])
 
-  useEffect(() => {
-    const container = containerRef.current
-    if (!container) return
-
-    const observer = new IntersectionObserver(
-      (entries) => {
-        entries.forEach((entry) => {
-          if (entry.isIntersecting) {
-            setActiveId(entry.target.id)
-            setIsHidden(false)
-          }
-        })
-      },
-      {
-        root: null,
-        rootMargin: '-50% 0px -50% 0px',
-        threshold: 0
-      }
-    )
-
-    const triggers = container.querySelectorAll('[data-scroll-trigger]')
-    triggers.forEach((trigger) => observer.observe(trigger))
-
-    return () => {
-      triggers.forEach((trigger) => observer.unobserve(trigger))
-    }
-  }, [])
+  const context = {
+    active,
+    setActive,
+    previous,
+  }
 
   return (
-    <ScrollObserverContext.Provider value={{ activeId, isHidden }}>
-      <div ref={containerRef} className={className}>
-        {typeof children === 'function' ? children(isHidden) : children}
-      </div>
+    <ScrollObserverContext.Provider value={context}>
+      <Component className={className} {...props}>
+        {typeof children === "function" ? children(isHidden) : children}
+      </Component>
     </ScrollObserverContext.Provider>
   )
 }
 
-ScrollObserver.TriggerGroup = function TriggerGroup({ children, className }) {
-  return <div className={className}>{children}</div>
-}
+function TriggerGroup({ as = "div", children, className, ...props }) {
+  const Component = as;
+  const container = useRef(null)
 
-ScrollObserver.Trigger = function Trigger({ id, children, className }) {
-  const { activeId } = useContext(ScrollObserverContext)
-  const isActive = activeId === id
+  const [childElements, setChildElements] = useState([])
+
+  useEffect(() => {
+    if (container.current) {
+      setChildElements(Array.from(container.current.children))
+    }
+  }, [])
+
+  const context = { peers: childElements }
 
   return (
-    <div
-      id={id}
-      data-scroll-trigger
-      className={className}
-    >
-      {typeof children === 'function' ? children(isActive) : children}
-    </div>
+    <TriggerGroupContext.Provider value={context}>
+      <Component ref={container} className={className} {...props}>
+        {children}
+      </Component>
+    </TriggerGroupContext.Provider>
   )
 }
 
-ScrollObserver.ReactorGroup = function ReactorGroup({ children, className }) {
-  return <div className={className}>{children}</div>
-}
+function Trigger({ as = "div", children, className, ...props }) {
+  const Component = as;
+  const container = useRef(null)
 
-ScrollObserver.Reactor = function Reactor({ children, className, index }) {
-  const { activeId } = useContext(ScrollObserverContext)
-  const isActive = activeId === `features-${index}`
+  const scrollObserverContext = useContext(ScrollObserverContext)
+  const triggerGroupContext = useContext(TriggerGroupContext)
+
+  // current element index
+  const index = useMemo(() => {
+    return triggerGroupContext.peers ? triggerGroupContext.peers.indexOf(container.current) : -1
+  }, [triggerGroupContext.peers])
+
+  const isFirst = useMemo(() => index === 0, [index])
+  const isLast = useMemo(() => index === triggerGroupContext.peers.length - 1, [index])
+
+  // active element
+  const isActive = useMemo(() => scrollObserverContext.active === index, [scrollObserverContext.active])
+
+  // component logic
+  const { height: windowHeight } = useWindowSize()
+  const { y: windowScroll } = useWindowScroll()
+
+  const [y, setY] = useState(-1)
+  const [height, setHeight] = useState(-1)
+
+  useEffect(() => {
+    setY(container.current.getBoundingClientRect().top)
+    setHeight(container.current.getBoundingClientRect().height)
+  }, [windowScroll])
+
+  const isVisible = useMemo(() => {
+    return y > windowHeight / 2 - height && y <= windowHeight / 2
+  }, [windowHeight, y, height])
+
+  useEffect(() => {
+    if (isVisible) {
+      scrollObserverContext.setActive(index)
+    } else if (isFirst && y > windowHeight / 2 - height) {
+      scrollObserverContext.setActive(null)
+    } else if (isLast && y <= windowHeight / 2) {
+      scrollObserverContext.setActive(null)
+    }
+  }, [isVisible, isFirst, isLast, y, windowHeight, height, index, scrollObserverContext])
 
   return (
-    <div className={className}>
-      {typeof children === 'function' ? children(isActive) : children}
-    </div>
+    <Component ref={container} className={className} {...props}>
+      {children(isActive)}
+    </Component>
   )
 }
 
+export function ReactorGroup({ as = "div", children, className, ...props }) {
+  const Component = as;
+  const container = useRef(null)
+
+  const [childElements, setChildElements] = useState([])
+
+  useEffect(() => {
+    if (container.current) {
+      setChildElements(Array.from(container.current.children))
+    }
+  }, [])
+
+  const context = { peers: childElements }
+
+  return (
+    <ReactorGroupContext.Provider value={context}>
+      <Component ref={container} className={className} {...props}>
+        {children}
+      </Component>
+    </ReactorGroupContext.Provider>
+  )
+}
+
+export function Reactor({ as = "div", children, className, ...props }) {
+  const Component = as;
+  const container = useRef(null)
+
+  const scrollObserverContext = useContext(ScrollObserverContext)
+  const reactorGroupContext = useContext(ReactorGroupContext)
+
+  const index = useMemo(() => {
+    return reactorGroupContext.peers ? reactorGroupContext.peers.indexOf(container.current) : -1
+  }, [reactorGroupContext.peers])
+
+  // active element
+  const isActive = useMemo(() => scrollObserverContext.active === index, [scrollObserverContext.active])
+
+  return (
+    <Component ref={container} className={className} {...props}>
+      {children(isActive)}
+    </Component>
+  )
+}
+
+export const ScrollObserver = Object.assign(Root, { TriggerGroup, Trigger, ReactorGroup, Reactor })
 export default ScrollObserver

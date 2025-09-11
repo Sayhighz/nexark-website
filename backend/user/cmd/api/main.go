@@ -39,6 +39,11 @@ func main() {
 		log.Fatal("Failed to connect to database:", err)
 	}
 
+	// Run database migrations on startup
+	if err := database.RunMigrations(db, "migrations"); err != nil {
+		log.Fatal("Failed to run migrations:", err)
+	}
+
 	// Redis initialization skipped for testing
 
 	// Initialize core services
@@ -48,7 +53,7 @@ func main() {
 
 	// Initialize business services
 	userService := services.NewUserService(db, steamAuth, stripeService)
-	paymentService := services.NewPaymentService(db, stripeService, userService)
+	paymentService := services.NewPaymentService(db, stripeService, userService, cfg.External.FrontendURL)
 	creditService := services.NewCreditService(db, userService, paymentService)
 	shopService := services.NewShopService(db)
 	serverService := services.NewServerService(db)
@@ -185,7 +190,7 @@ func setupRoutes(
 	{
 		credits.GET("/balance", creditHandler.GetBalance)
 		credits.GET("/summary", creditHandler.GetSummary)
-		credits.POST("/topup", middleware.PaymentRateLimiter(), middleware.ValidateAmount(100, 50000), creditHandler.TopUp)
+		credits.POST("/topup", middleware.PaymentRateLimiter(), creditHandler.TopUp)
 		credits.GET("/transactions", middleware.ValidatePagination(), creditHandler.GetTransactions)
 		credits.POST("/transfer", creditHandler.TransferCredits)
 	}
@@ -223,18 +228,6 @@ func setupRoutes(
 		shop.GET("/categories", shopHandler.GetCategories)
 		shop.GET("/items", middleware.ValidatePagination(), shopHandler.GetItems)
 		shop.GET("/items/:item_id", shopHandler.GetItemByID)
-	}
-
-	// ==========================================
-	// SHOPPING CART ROUTES
-	// ==========================================
-	cart := v1.Group("/cart")
-	cart.Use(authMiddleware.RequireAuth())
-	{
-		cart.POST("/add", shopHandler.AddToCart)
-		cart.GET("/", shopHandler.GetCart)
-		cart.PUT("/:cart_id", shopHandler.UpdateCartItem)
-		cart.DELETE("/:cart_id", shopHandler.RemoveFromCart)
 	}
 
 	// ==========================================
@@ -371,12 +364,6 @@ func setupRoutes(
 					"GET /api/v1/shop/categories",
 					"GET /api/v1/shop/items",
 					"GET /api/v1/shop/items/:id",
-				},
-				"cart": []string{
-					"POST /api/v1/cart/add",
-					"GET /api/v1/cart",
-					"PUT /api/v1/cart/:id",
-					"DELETE /api/v1/cart/:id",
 				},
 				"transactions": []string{
 					"POST /api/v1/transactions/purchase",

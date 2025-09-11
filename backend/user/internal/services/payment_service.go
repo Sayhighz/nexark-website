@@ -18,13 +18,15 @@ type PaymentService struct {
 	db            *gorm.DB
 	stripeService *stripe.StripeService
 	userService   *UserService
+	frontendURL   string
 }
 
-func NewPaymentService(db *gorm.DB, stripeService *stripe.StripeService, userService *UserService) *PaymentService {
+func NewPaymentService(db *gorm.DB, stripeService *stripe.StripeService, userService *UserService, frontendURL string) *PaymentService {
 	return &PaymentService{
 		db:            db,
 		stripeService: stripeService,
 		userService:   userService,
+		frontendURL:   frontendURL,
 	}
 }
 
@@ -115,10 +117,18 @@ func (s *PaymentService) GetPaymentStatus(ctx context.Context, userID uint, paym
 		return nil, fmt.Errorf("payment not found: %w", err)
 	}
 
+	// Check if payment has expired
+	if payment.ExpiresAt != nil && time.Now().After(*payment.ExpiresAt) && payment.PaymentStatus == "pending" {
+		payment.PaymentStatus = "expired"
+		payment.FailureReason = func() *string { s := "Payment session expired"; return &s }()
+		s.db.Save(&payment)
+		return &payment, nil
+	}
+
 	// Update status from Stripe if needed
 	if payment.StripePaymentIntentID != nil && payment.PaymentStatus == "pending" {
 		stripePI, err := s.stripeService.GetPaymentIntent(ctx, *payment.StripePaymentIntentID)
-		if err == nil {
+		if err == nil && string(stripePI.Status) != payment.PaymentStatus {
 			payment.PaymentStatus = string(stripePI.Status)
 			s.db.Save(&payment)
 		}
@@ -133,6 +143,8 @@ func (s *PaymentService) ProcessWebhook(ctx context.Context, event *stripelib.Ev
 		return s.handlePaymentSucceeded(ctx, event)
 	case "payment_intent.payment_failed":
 		return s.handlePaymentFailed(ctx, event)
+	case "checkout.session.completed":
+		return s.handleCheckoutSessionCompleted(ctx, event)
 	default:
 		// Log unknown event type but don't fail
 		fmt.Printf("Unhandled webhook event type: %s\n", event.Type)
@@ -145,43 +157,7 @@ func (s *PaymentService) handlePaymentSucceeded(ctx context.Context, event *stri
 	if err := json.Unmarshal(event.Data.Raw, &paymentIntent); err != nil {
 		return fmt.Errorf("failed to unmarshal payment intent: %w", err)
 	}
-
-	// Find payment record
-	var payment models.Payment
-	err := s.db.Where("stripe_payment_intent_id = ?", paymentIntent.ID).First(&payment).Error
-	if err != nil {
-		return fmt.Errorf("payment not found: %w", err)
-	}
-
-	// Update payment status
-	now := time.Now()
-	payment.PaymentStatus = "succeeded"
-	payment.ConfirmedAt = &now
-
-	// Store webhook data
-	webhookData := models.JSON{}
-	json.Unmarshal(event.Data.Raw, &webhookData)
-	payment.StripeWebhookData = webhookData
-
-	if err := s.db.Save(&payment).Error; err != nil {
-		return fmt.Errorf("failed to update payment: %w", err)
-	}
-
-	// Add credits to user
-	err = s.userService.UpdateCreditBalance(
-		ctx,
-		payment.UserID,
-		payment.Amount,
-		"deposit",
-		fmt.Sprintf("Credit top-up via %s", payment.PaymentMethod),
-		&payment.PaymentID,
-		nil,
-	)
-	if err != nil {
-		return fmt.Errorf("failed to add credits: %w", err)
-	}
-
-	return nil
+	return s.applySuccessfulPayment(ctx, &paymentIntent, event.Data.Raw)
 }
 
 func (s *PaymentService) handlePaymentFailed(ctx context.Context, event *stripelib.Event) error {
@@ -423,4 +399,281 @@ func (s *PaymentService) ValidatePaymentMethod(ctx context.Context, userID uint,
 	}
 
 	return nil
+}
+
+func (s *PaymentService) CreateCheckoutSession(ctx context.Context, userID uint, req CreatePaymentIntentRequest) (*models.Payment, string, error) {
+	// Security validations
+	if req.Amount < 100 || req.Amount > 50000 {
+		return nil, "", fmt.Errorf("invalid amount: must be between 100 and 50,000 THB")
+	}
+
+	if req.Currency != "thb" {
+		return nil, "", fmt.Errorf("only THB currency is supported")
+	}
+
+	// Clean up expired payments first
+	if err := s.cleanupExpiredPayments(ctx, userID); err != nil {
+		// Log error but don't fail the request
+		fmt.Printf("[WARNING] Failed to cleanup expired payments for user %d: %v\n", userID, err)
+	}
+
+	// Check for recent valid pending payments (prevent duplicate payments)
+	// Exclude expired payments from the check
+	var pendingCount int64
+	fiveMinutesAgo := time.Now().Add(-5 * time.Minute)
+	now := time.Now()
+	err := s.db.Model(&models.Payment{}).
+		Where("user_id = ? AND payment_status = ? AND created_at > ? AND (expires_at IS NULL OR expires_at > ?)",
+			userID, "pending", fiveMinutesAgo, now).
+		Count(&pendingCount).Error
+	if err != nil {
+		return nil, "", fmt.Errorf("failed to check pending payments: %w", err)
+	}
+	if pendingCount > 0 {
+		return nil, "", fmt.Errorf("คุณมีการชำระเงินที่รอดำเนินการอยู่ กรุณารอสักครู่แล้วลองใหม่อีกครั้ง")
+	}
+
+	// Get user
+	user, err := s.userService.GetUserByID(ctx, userID)
+	if err != nil {
+		return nil, "", fmt.Errorf("failed to get user: %w", err)
+	}
+
+	if user.IsBanned {
+		return nil, "", fmt.Errorf("user account is banned")
+	}
+
+	if user.StripeCustomerID == nil {
+		return nil, "", fmt.Errorf("user has no stripe customer")
+	}
+
+	// Create payment record
+	payment := models.Payment{
+		PaymentUUID:   uuid.New().String(),
+		UserID:        userID,
+		Amount:        req.Amount,
+		Currency:      req.Currency,
+		PaymentMethod: req.PaymentMethod,
+		PaymentStatus: "pending",
+		Metadata: models.JSON{
+			"user_id": userID,
+			"purpose": "credit_topup",
+		},
+		ExpiresAt: func() *time.Time {
+			t := time.Now().Add(30 * time.Minute)
+			return &t
+		}(),
+	}
+
+	if err := s.db.Create(&payment).Error; err != nil {
+		return nil, "", fmt.Errorf("failed to create payment record: %w", err)
+	}
+
+	// Create Stripe checkout session
+	amountInCents := int64(req.Amount * 100) // Convert to cents
+
+	var paymentMethodTypes []string
+	switch req.PaymentMethod {
+	case "promptpay":
+		paymentMethodTypes = []string{"promptpay"}
+	case "card":
+		paymentMethodTypes = []string{"card"}
+	default:
+		paymentMethodTypes = []string{"card", "promptpay"}
+	}
+
+	// Build success and cancel URLs
+	successURL := fmt.Sprintf("%s/account/credits?session_id={CHECKOUT_SESSION_ID}&status=success", s.getFrontendURL())
+	cancelURL := fmt.Sprintf("%s/account/credits?status=cancelled", s.getFrontendURL())
+
+	stripeParams := stripe.CreateCheckoutSessionParams{
+		CustomerID:         *user.StripeCustomerID,
+		SuccessURL:         successURL,
+		CancelURL:          cancelURL,
+		Amount:             amountInCents,
+		Currency:           req.Currency,
+		PaymentMethodTypes: paymentMethodTypes,
+		Description:        fmt.Sprintf("Credit Top-up: ฿%.2f", req.Amount),
+		Metadata: map[string]string{
+			"payment_id": fmt.Sprintf("%d", payment.PaymentID),
+			"user_id":    fmt.Sprintf("%d", userID),
+			"purpose":    "credit_topup",
+		},
+	}
+
+	session, err := s.stripeService.CreateCheckoutSession(ctx, stripeParams)
+	if err != nil {
+		return nil, "", fmt.Errorf("failed to create checkout session: %w", err)
+	}
+
+	// Update payment record with session data
+	if session.PaymentIntent != nil {
+		payment.StripePaymentIntentID = &session.PaymentIntent.ID
+	}
+	payment.Metadata = models.JSON{
+		"user_id":          userID,
+		"purpose":          "credit_topup",
+		"session_id":       session.ID,
+		"checkout_session": session.URL,
+	}
+
+	if err := s.db.Save(&payment).Error; err != nil {
+		return nil, "", fmt.Errorf("failed to update payment record: %w", err)
+	}
+
+	return &payment, session.URL, nil
+}
+
+func (s *PaymentService) handleCheckoutSessionCompleted(ctx context.Context, event *stripelib.Event) error {
+	var session stripelib.CheckoutSession
+	if err := json.Unmarshal(event.Data.Raw, &session); err != nil {
+		return fmt.Errorf("failed to unmarshal checkout session: %w", err)
+	}
+
+	// Find payment record using metadata
+	var payment models.Payment
+	err := s.db.Where("JSON_EXTRACT(metadata, '$.session_id') = ?", session.ID).First(&payment).Error
+	if err != nil {
+		return fmt.Errorf("payment not found for session: %w", err)
+	}
+
+	// Update payment status
+	payment.PaymentStatus = "completed"
+	confirmedAt := time.Now()
+	payment.ConfirmedAt = &confirmedAt
+
+	// Store session data
+	webhookData := models.JSON{}
+	json.Unmarshal(event.Data.Raw, &webhookData)
+	payment.StripeWebhookData = webhookData
+
+	if err := s.db.Save(&payment).Error; err != nil {
+		return fmt.Errorf("failed to update payment: %w", err)
+	}
+
+	// Apply successful payment (add credits to user)
+	return s.applySuccessfulPayment(ctx, session.PaymentIntent, event.Data.Raw)
+}
+
+func (s *PaymentService) applySuccessfulPayment(ctx context.Context, paymentIntent *stripelib.PaymentIntent, rawData json.RawMessage) error {
+	// Find payment record
+	var payment models.Payment
+	err := s.db.Where("stripe_payment_intent_id = ?", paymentIntent.ID).First(&payment).Error
+	if err != nil {
+		fmt.Printf("[SECURITY] Payment not found for intent: %s\n", paymentIntent.ID)
+		return fmt.Errorf("payment not found: %w", err)
+	}
+
+	// Check if already processed (idempotency)
+	if payment.PaymentStatus == "completed" {
+		fmt.Printf("[INFO] Payment %d already processed, skipping\n", payment.PaymentID)
+		return nil // Already processed
+	}
+
+	// Security check: verify payment amount matches
+	expectedAmount := int64(payment.Amount * 100)
+	if paymentIntent.Amount != expectedAmount {
+		fmt.Printf("[SECURITY] Amount mismatch for payment %d: expected %d, got %d\n",
+			payment.PaymentID, expectedAmount, paymentIntent.Amount)
+		return fmt.Errorf("payment amount mismatch")
+	}
+
+	// Security check: verify payment is in succeeded state
+	if paymentIntent.Status != "succeeded" {
+		fmt.Printf("[SECURITY] Invalid payment status for payment %d: %s\n",
+			payment.PaymentID, paymentIntent.Status)
+		return fmt.Errorf("payment not in succeeded state")
+	}
+
+	return s.db.Transaction(func(tx *gorm.DB) error {
+		// Update payment status
+		payment.PaymentStatus = "completed"
+		confirmedAt := time.Now()
+		payment.ConfirmedAt = &confirmedAt
+
+		// Store webhook data
+		webhookData := models.JSON{}
+		json.Unmarshal(rawData, &webhookData)
+		payment.StripeWebhookData = webhookData
+
+		if err := tx.Save(&payment).Error; err != nil {
+			return fmt.Errorf("failed to update payment: %w", err)
+		}
+
+		// Add credits to user account
+		err = s.userService.UpdateCreditBalance(
+			ctx,
+			payment.UserID,
+			payment.Amount,
+			"deposit",
+			fmt.Sprintf("Credit top-up via %s - Payment ID: %d", payment.PaymentMethod, payment.PaymentID),
+			&payment.PaymentID,
+			nil,
+		)
+		if err != nil {
+			return fmt.Errorf("failed to add credits: %w", err)
+		}
+
+		fmt.Printf("[SUCCESS] Payment %d processed successfully, added ฿%.2f credits to user %d\n",
+			payment.PaymentID, payment.Amount, payment.UserID)
+
+		return nil
+	})
+}
+
+// cleanupExpiredPayments marks expired payments as failed
+func (s *PaymentService) cleanupExpiredPayments(ctx context.Context, userID uint) error {
+	now := time.Now()
+
+	// Update expired pending payments to failed status
+	result := s.db.Model(&models.Payment{}).
+		Where("user_id = ? AND payment_status = ? AND expires_at IS NOT NULL AND expires_at < ?",
+			userID, "pending", now).
+		Updates(map[string]interface{}{
+			"payment_status": "expired",
+			"failure_reason": "Payment session expired",
+		})
+
+	if result.Error != nil {
+		return fmt.Errorf("failed to cleanup expired payments: %w", result.Error)
+	}
+
+	if result.RowsAffected > 0 {
+		fmt.Printf("[INFO] Cleaned up %d expired payments for user %d\n", result.RowsAffected, userID)
+	}
+
+	return nil
+}
+
+// updateStalePaymentStatuses checks and updates payment statuses from Stripe for stale pending payments
+func (s *PaymentService) updateStalePaymentStatuses(ctx context.Context, userID uint) error {
+	// Get pending payments older than 2 minutes with Stripe payment intent IDs
+	twoMinutesAgo := time.Now().Add(-2 * time.Minute)
+
+	var stalePayments []models.Payment
+	err := s.db.Where("user_id = ? AND payment_status = ? AND stripe_payment_intent_id IS NOT NULL AND created_at < ?",
+		userID, "pending", twoMinutesAgo).
+		Find(&stalePayments).Error
+
+	if err != nil {
+		return fmt.Errorf("failed to get stale payments: %w", err)
+	}
+
+	for _, payment := range stalePayments {
+		// Update status from Stripe
+		if payment.StripePaymentIntentID != nil {
+			stripePI, err := s.stripeService.GetPaymentIntent(ctx, *payment.StripePaymentIntentID)
+			if err == nil && string(stripePI.Status) != payment.PaymentStatus {
+				payment.PaymentStatus = string(stripePI.Status)
+				s.db.Save(&payment)
+				fmt.Printf("[INFO] Updated payment %d status from Stripe: %s\n", payment.PaymentID, stripePI.Status)
+			}
+		}
+	}
+
+	return nil
+}
+
+func (s *PaymentService) getFrontendURL() string {
+	return s.frontendURL
 }

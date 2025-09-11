@@ -66,25 +66,25 @@ func (s *CreditService) GetCreditBalance(ctx context.Context, userID uint) (*Cre
 	}, nil
 }
 
-func (s *CreditService) TopUpCredits(ctx context.Context, userID uint, req TopUpRequest) (*models.Payment, error) {
+func (s *CreditService) TopUpCredits(ctx context.Context, userID uint, req TopUpRequest) (*models.Payment, string, error) {
 	// Set default currency
 	if req.Currency == "" {
 		req.Currency = "thb"
 	}
 
-	// Create payment intent through payment service
+	// Create a Stripe Checkout Session (hosted) through payment service
 	paymentReq := CreatePaymentIntentRequest{
 		Amount:        req.Amount,
 		Currency:      req.Currency,
 		PaymentMethod: req.PaymentMethod,
 	}
 
-	payment, err := s.paymentService.CreatePaymentIntent(ctx, userID, paymentReq)
+	payment, checkoutURL, err := s.paymentService.CreateCheckoutSession(ctx, userID, paymentReq)
 	if err != nil {
-		return nil, fmt.Errorf("failed to create payment intent: %w", err)
+		return nil, "", fmt.Errorf("failed to create checkout session: %w", err)
 	}
 
-	return payment, nil
+	return payment, checkoutURL, nil
 }
 
 func (s *CreditService) GetCreditTransactions(ctx context.Context, userID uint, limit, offset int, transactionType string) ([]models.CreditTransaction, int64, error) {

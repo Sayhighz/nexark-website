@@ -2,321 +2,316 @@ import React, { useEffect, useState } from 'react';
 import { useCredits } from '../hooks/useCredits';
 import Loading from '../components/common/Loading';
 import ErrorMessage from '../components/common/ErrorMessage';
-import StarBackground from '../components/site/StarBackground';
-import Navbar from '../components/site/Navbar';
 import { SpotlightCard } from '../components/ui/SpotlightCard';
 import SpotlightButton from '../components/ui/SpotlightButton';
+import { Sparkles } from '../components/ui/Sparkles';
 
 const Credits = () => {
   const {
-    balance,
-    summary,
-    transactions,
     getBalance,
-    getSummary,
     topUp,
-    getTransactions,
     loading,
     error
   } = useCredits();
 
-  const [topUpAmount, setTopUpAmount] = useState('');
-  const [showTopUpForm, setShowTopUpForm] = useState(false);
+  const [selectedPackage, setSelectedPackage] = useState(null);
+  const [showSuccess, setShowSuccess] = useState(false);
+  const [acceptTerms, setAcceptTerms] = useState(false);
+
+  const packages = [
+    {
+      amount: 100,
+      bonus: 0,
+      display: "100 บาท"
+    },
+    {
+      amount: 200,
+      bonus: 5,
+      display: "200 บาท (+5 บาทโบนัส)"
+    },
+    {
+      amount: 500,
+      bonus: 50,
+      display: "500 บาท (+50 บาทโบนัส)"
+    },
+    {
+      amount: 1000,
+      bonus: 300,
+      display: "1,000 บาท (+300 บาทโบนัส)"
+    }
+  ];
 
   useEffect(() => {
-    loadCreditData();
-  }, []);
-
-  const loadCreditData = async () => {
-    try {
-      await Promise.all([
-        getBalance(),
-        getSummary(),
-        getTransactions()
-      ]);
-    } catch (error) {
-      console.error('Failed to load credit data:', error);
+    getBalance();
+    
+    // Check for payment status from URL parameters
+    const urlParams = new URLSearchParams(window.location.search);
+    const status = urlParams.get('status');
+    const sessionId = urlParams.get('session_id');
+    
+    if (status === 'success' && sessionId) {
+      setShowSuccess(true);
+      // Refresh balance after successful payment
+      setTimeout(() => {
+        getBalance();
+        setShowSuccess(false);
+        // Clean URL
+        window.history.replaceState({}, document.title, window.location.pathname);
+      }, 3000);
+    } else if (status === 'cancelled') {
+      // Handle cancelled payment
+      console.log('Payment was cancelled');
+      // Clean URL
+      window.history.replaceState({}, document.title, window.location.pathname);
     }
-  };
+  }, [getBalance]);
 
-  const handleTopUp = async (e) => {
-    e.preventDefault();
+  const handleTopUp = async (pkg) => {
+    if (!acceptTerms) {
+      alert('กรุณายอมรับข้อตกลงและเงื่อนไข');
+      return;
+    }
+
     try {
-      const amount = parseFloat(topUpAmount);
-      if (amount < 100 || amount > 50000) {
-        alert('Amount must be between 100 and 50,000 THB');
-        return;
-      }
-
-      await topUp({
-        amount: amount,
+      const result = await topUp({
+        amount: pkg.amount, // Don't include bonus in the payment amount
         currency: 'thb',
-        payment_method: 'promptpay' // Default payment method
+        payment_method: 'promptpay'
       });
 
-      setTopUpAmount('');
-      setShowTopUpForm(false);
-      alert('Top-up initiated! Please complete the payment.');
-    } catch {
-      alert('Failed to initiate top-up');
+      // Redirect to Stripe Checkout
+      if (result && result.checkout_url) {
+        window.location.href = result.checkout_url;
+      } else {
+        alert('เกิดข้อผิดพลาด: ไม่สามารถเปิดหน้าชำระเงินได้');
+      }
+    } catch (err) {
+      console.error('Payment error:', err);
+      
+      // Better error handling with Thai messages
+      let errorMessage = 'เกิดข้อผิดพลาดในการเติมเงิน';
+      
+      if (err.response?.data?.error?.message) {
+        const backendError = err.response.data.error.message;
+        if (backendError.includes('pending payment')) {
+          errorMessage = 'คุณมีการชำระเงินที่รอดำเนินการอยู่ กรุณารอสักครู่แล้วลองใหม่อีกครั้ง';
+        } else if (backendError.includes('amount')) {
+          errorMessage = 'จำนวนเงินไม่ถูกต้อง (ขั้นต่ำ 100 บาท สูงสุด 50,000 บาท)';
+        } else if (backendError.includes('user account is banned')) {
+          errorMessage = 'บัญชีของคุณถูกระงับ ไม่สามารถเติมเงินได้';
+        } else if (backendError.includes('Invalid or expired token')) {
+          errorMessage = 'กรุณาเข้าสู่ระบบใหม่';
+          window.dispatchEvent(new CustomEvent('auth:unauthorized'));
+        } else {
+          errorMessage = `เกิดข้อผิดพลาด: ${backendError}`;
+        }
+      } else if (err.response?.status === 401) {
+        errorMessage = 'กรุณาเข้าสู่ระบบก่อนเติมเงิน';
+        window.dispatchEvent(new CustomEvent('auth:unauthorized'));
+      } else if (err.response?.status === 429) {
+        errorMessage = 'มีการร้องขอมากเกินไป กรุณารอสักครู่แล้วลองใหม่';
+      } else if (!navigator.onLine) {
+        errorMessage = 'ไม่มีการเชื่อมต่ออินเทอร์เน็ต กรุณาตรวจสอบการเชื่อมต่อ';
+      }
+      
+      alert(errorMessage);
     }
   };
 
   return (
-    <div className="min-h-screen bg-black text-white relative overflow-hidden">
-      <Navbar />
-      <StarBackground />
+    <div className="space-y-6">
       
-      {/* Hero Section */}
-      <div className="relative pt-20">
-        <div className="absolute inset-0 bg-gradient-to-b from-black/70 via-black/50 to-black z-10"></div>
-        <div
-          className="h-96 bg-cover bg-center bg-no-repeat"
-          style={{
-            backgroundImage: `url('https://cdn.discordapp.com/attachments/820713052684419082/1002956012493471884/Server_Banner.png')`
-          }}
-        >
-          <div className="relative z-20 h-full flex items-center justify-center">
-            <div className="text-center px-4">
-              <h1 className="text-5xl font-bold mb-4 text-white">
-                Credits
-              </h1>
-              <p className="text-xl text-gray-200 max-w-2xl mx-auto leading-relaxed">
-                Manage your credit balance and transaction history
-              </p>
-            </div>
+      {/* ServerHero Style Header */}
+      <>
+        {/* Text header */}
+        <div className="relative pt-20 pb-8">
+          <div className="relative z-20 text-center px-4">
+            <h1 className="text-5xl font-bold mb-4 text-white" style={{ fontFamily: 'SukhumvitSet' }}>
+              เติมเครดิต
+            </h1>
+            <p className="text-xl text-gray-200 max-w-2xl mx-auto leading-relaxed" style={{ fontFamily: 'SukhumvitSet' }}>
+              เลือกแพ็คเกจเติมเครดิตที่เหมาะสมกับคุณ พร้อมโบนัสพิเศษ
+            </p>
           </div>
         </div>
-      </div>
+
+        {/* Background band with sparkles */}
+        <div className="relative mb-8">
+          <div className="relative h-32 overflow-hidden [mask-image:radial-gradient(50%_50%,white,transparent)] before:absolute before:inset-0 before:bg-[radial-gradient(circle_at_bottom_center,#8350e8,transparent_70%)] before:opacity-40 after:absolute after:-left-1/2 after:top-1/2 after:aspect-[1/0.7] after:w-[200%] after:rounded-[100%] after:border-t after:border-[#7876c566] after:bg-zinc-900">
+            <div
+              className="absolute inset-0 bg-cover bg-center bg-no-repeat opacity-30"
+              style={{
+                backgroundImage: `url('https://cdn.discordapp.com/attachments/820713052684419082/1002956012493471884/Server_Banner.png')`
+              }}
+            ></div>
+
+            <Sparkles
+              density={800}
+              className="absolute inset-x-0 bottom-0 h-full w-full [mask-image:radial-gradient(50%_50%,white,transparent_85%)]"
+              color="#8350e8"
+              size={1.5}
+              speed={0.3}
+            />
+          </div>
+        </div>
+      </>
 
       {/* Content */}
       <div className="relative z-20">
-        <div className="container mx-auto px-4 max-w-7xl py-8">
-          {/* Header Actions */}
-          <div className="flex justify-end mb-8">
-            <SpotlightButton
-              onClick={() => setShowTopUpForm(!showTopUpForm)}
-              variant="accent"
-              size="md"
-            >
-              {showTopUpForm ? 'Cancel' : 'Top Up Credits'}
-            </SpotlightButton>
-          </div>
-
+        <div className="container mx-auto px-4 max-w-6xl py-8">
+          
           {/* Error Message */}
           {error && (
-            <ErrorMessage error={error} onRetry={loadCreditData} />
-          )}
-
-          {/* Top Up Form */}
-          {showTopUpForm && (
-            <div className="mb-8">
-              <SpotlightCard
-                hsl
-                hslMin={280}
-                hslMax={320}
-                className="w-full rounded-xl bg-white/10 p-8 shadow-xl shadow-white/2.5"
-              >
-                <div className="absolute inset-px rounded-[calc(theme(borderRadius.xl)-1px)] bg-zinc-800/50"></div>
-                <div className="absolute inset-0 bg-[radial-gradient(40%_128px_at_50%_0%,theme(backgroundColor.white/5%),transparent)]"></div>
-                <div className="relative">
-                  <h2 className="text-2xl font-bold text-white mb-6">Top Up Credits</h2>
-                  <form onSubmit={handleTopUp} className="space-y-6">
-                    <div>
-                      <label className="block text-sm font-medium text-gray-300 mb-2">
-                        Amount (THB)
-                      </label>
-                      <input
-                        type="number"
-                        value={topUpAmount}
-                        onChange={(e) => setTopUpAmount(e.target.value)}
-                        placeholder="Enter amount (100-50,000)"
-                        min="100"
-                        max="50000"
-                        className="w-full px-4 py-3 bg-white/10 border border-gray-600 rounded-lg text-white placeholder-gray-400 backdrop-blur-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                        required
-                      />
-                      <p className="text-xs text-gray-400 mt-2">
-                        Minimum: 100 THB, Maximum: 50,000 THB
-                      </p>
-                    </div>
-
-                    <div className="flex gap-3">
-                      <SpotlightButton type="submit" variant="accent" size="md">
-                        Proceed to Payment
-                      </SpotlightButton>
-                      <SpotlightButton
-                        type="button"
-                        onClick={() => setShowTopUpForm(false)}
-                        variant="secondary"
-                        size="md"
-                      >
-                        Cancel
-                      </SpotlightButton>
-                    </div>
-                  </form>
-                </div>
-              </SpotlightCard>
+            <div className="mb-6 p-4 bg-red-900/50 border border-red-500/50 rounded-lg backdrop-blur-sm">
+              <p className="text-red-300" style={{ fontFamily: 'SukhumvitSet' }}>{error}</p>
             </div>
           )}
 
-          {/* Credit Balance Card */}
+          {/* Package Selection */}
           <div className="mb-8">
-            <SpotlightCard
-              hsl
-              hslMin={120}
-              hslMax={160}
-              className="w-full rounded-xl bg-white/10 p-8 shadow-xl shadow-white/2.5"
-            >
-              <div className="absolute inset-px rounded-[calc(theme(borderRadius.xl)-1px)] bg-zinc-800/50"></div>
-              <div className="absolute inset-0 bg-[radial-gradient(40%_128px_at_50%_0%,theme(backgroundColor.white/5%),transparent)]"></div>
-              <div className="relative">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <h2 className="text-2xl font-bold text-white">Current Balance</h2>
-                    <p className="text-gray-300">Available credits for purchases</p>
-                  </div>
-                  <div className="text-right">
-                    <div className="text-4xl font-bold text-green-400">
-                      {balance?.balance || 0}
+            <h2 className="text-xl font-bold text-white mb-6" style={{ fontFamily: 'SukhumvitSet' }}>เลือกแพ็คเกจ</h2>
+            <div className="grid grid-cols-4 gap-4">
+              {packages.map((pkg, index) => (
+                <div
+                  key={pkg.amount}
+                  className={`relative p-6 rounded-lg border-2 transition-all cursor-pointer backdrop-blur-sm flex flex-col justify-between min-h-[180px] ${
+                    selectedPackage === index
+                      ? 'border-blue-500 bg-blue-600/20'
+                      : 'border-white/20 bg-white/10 hover:border-white/30 hover:bg-white/15'
+                  }`}
+                  onClick={() => setSelectedPackage(index)}
+                >
+                  {/* Bonus Badge */}
+                  {pkg.bonus > 0 && (
+                    <div className="absolute -top-2 -right-2 bg-gradient-to-r from-yellow-500 to-orange-500 text-black text-xs font-bold px-2 py-1 rounded-full" style={{ fontFamily: 'SukhumvitSet' }}>
+                      +{pkg.bonus} โบนัส
                     </div>
-                    <div className="text-gray-300">Credits</div>
+                  )}
+                  
+                  {/* Package Content */}
+                  <div className="text-center flex-1 flex flex-col justify-center">
+                    <div className="text-2xl font-bold text-white mb-2" style={{ fontFamily: 'SukhumvitSet' }}>
+                      ฿{pkg.amount.toLocaleString()}
+                    </div>
+                    
+                    <div className="h-6 mb-2">
+                      {pkg.bonus > 0 ? (
+                        <div className="text-green-400 text-sm" style={{ fontFamily: 'SukhumvitSet' }}>
+                          + ฿{pkg.bonus} โบนัส
+                        </div>
+                      ) : (
+                        <div className="text-sm text-transparent">-</div>
+                      )}
+                    </div>
+                    
+                    <div className="text-gray-300 text-sm mb-4" style={{ fontFamily: 'SukhumvitSet' }}>
+                      รวมได้ ฿{(pkg.amount + pkg.bonus).toLocaleString()}
+                    </div>
                   </div>
+                  
+                  {/* Button at bottom */}
+                  <div className="mt-auto">
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleTopUp(pkg);
+                      }}
+                      disabled={loading}
+                      className="w-full py-2 bg-blue-600 text-white rounded-full hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                      style={{ fontFamily: 'SukhumvitSet' }}
+                    >
+                      เติมเงิน
+                    </button>
+                  </div>
+                  
+                  {/* Popular Badge for best value */}
+                  {pkg.amount === 1000 && (
+                    <div className="absolute -top-3 left-1/2 transform -translate-x-1/2 bg-gradient-to-r from-purple-600 to-pink-600 text-white text-xs font-bold px-3 py-1 rounded-full" style={{ fontFamily: 'SukhumvitSet' }}>
+                      คุ้มที่สุด
+                    </div>
+                  )}
                 </div>
-              </div>
-            </SpotlightCard>
+              ))}
+            </div>
           </div>
 
-          {/* Credit Summary */}
-          {summary && (
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-              <SpotlightCard
-                hsl
-                hslMin={120}
-                hslMax={160}
-                className="w-full rounded-xl bg-white/10 p-6 shadow-xl shadow-white/2.5"
-              >
-                <div className="absolute inset-px rounded-[calc(theme(borderRadius.xl)-1px)] bg-zinc-800/50"></div>
-                <div className="relative">
-                  <h3 className="text-lg font-semibold text-white mb-2">Total Earned</h3>
-                  <p className="text-3xl font-bold text-green-400">
-                    +{summary.total_earned || 0}
-                  </p>
+          {/* Success Message */}
+          {showSuccess && (
+            <div className="mb-8 p-4 bg-green-900/50 border border-green-500/50 rounded-lg backdrop-blur-sm">
+              <div className="flex items-center space-x-3">
+                <svg className="w-6 h-6 text-green-400" fill="currentColor" viewBox="0 0 20 20">
+                  <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                </svg>
+                <div>
+                  <div className="text-green-300 font-medium" style={{ fontFamily: 'SukhumvitSet' }}>การชำระเงินสำเร็จ!</div>
+                  <div className="text-green-400 text-sm" style={{ fontFamily: 'SukhumvitSet' }}>เครดิตของคุณได้รับการอัปเดตแล้ว</div>
                 </div>
-              </SpotlightCard>
-
-              <SpotlightCard
-                hsl
-                hslMin={0}
-                hslMax={40}
-                className="w-full rounded-xl bg-white/10 p-6 shadow-xl shadow-white/2.5"
-              >
-                <div className="absolute inset-px rounded-[calc(theme(borderRadius.xl)-1px)] bg-zinc-800/50"></div>
-                <div className="relative">
-                  <h3 className="text-lg font-semibold text-white mb-2">Total Spent</h3>
-                  <p className="text-3xl font-bold text-red-400">
-                    -{summary.total_spent || 0}
-                  </p>
-                </div>
-              </SpotlightCard>
-
-              <SpotlightCard
-                hsl
-                hslMin={200}
-                hslMax={240}
-                className="w-full rounded-xl bg-white/10 p-6 shadow-xl shadow-white/2.5"
-              >
-                <div className="absolute inset-px rounded-[calc(theme(borderRadius.xl)-1px)] bg-zinc-800/50"></div>
-                <div className="relative">
-                  <h3 className="text-lg font-semibold text-white mb-2">Net Balance</h3>
-                  <p className="text-3xl font-bold text-blue-400">
-                    {summary.net_balance || 0}
-                  </p>
-                </div>
-              </SpotlightCard>
+              </div>
             </div>
           )}
 
-          {/* Transaction History */}
-          <div className="mb-8">
-            <SpotlightCard
-              hsl
-              hslMin={240}
-              hslMax={280}
-              className="w-full rounded-xl bg-white/10 p-8 shadow-xl shadow-white/2.5"
-            >
-              <div className="absolute inset-px rounded-[calc(theme(borderRadius.xl)-1px)] bg-zinc-800/50"></div>
-              <div className="absolute inset-0 bg-[radial-gradient(40%_128px_at_50%_0%,theme(backgroundColor.white/5%),transparent)]"></div>
-              <div className="relative">
-                <div className="flex items-center justify-between mb-6">
-                  <h2 className="text-2xl font-bold text-white">Transaction History</h2>
-                  <SpotlightButton
-                    onClick={() => getTransactions()}
-                    variant="secondary"
-                    size="sm"
-                  >
-                    Refresh
-                  </SpotlightButton>
+          {/* Loading State */}
+          {loading && (
+            <div className="mb-8 p-4 bg-blue-900/50 border border-blue-500/50 rounded-lg backdrop-blur-sm">
+              <div className="flex items-center space-x-3">
+                <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-400"></div>
+                <div>
+                  <div className="text-blue-300 font-medium" style={{ fontFamily: 'SukhumvitSet' }}>กำลังดำเนินการ...</div>
+                  <div className="text-blue-400 text-sm" style={{ fontFamily: 'SukhumvitSet' }}>กรุณารอสักครู่</div>
                 </div>
-
-                {loading ? (
-                  <Loading message="Loading transactions..." />
-                ) : transactions.length > 0 ? (
-                  <div className="space-y-3">
-                    {transactions.map((transaction) => (
-                      <div key={transaction.id} className="flex items-center justify-between p-4 bg-gray-800/30 rounded-lg border border-gray-700">
-                        <div>
-                          <p className="font-medium text-white">
-                            {transaction.description || transaction.type}
-                          </p>
-                          <p className="text-sm text-gray-400">
-                            {new Date(transaction.created_at).toLocaleDateString()}
-                          </p>
-                        </div>
-                        <div className="text-right">
-                          <p className={`font-semibold ${
-                            transaction.amount > 0 ? 'text-green-400' : 'text-red-400'
-                          }`}>
-                            {transaction.amount > 0 ? '+' : ''}{transaction.amount}
-                          </p>
-                          <p className="text-sm text-gray-400">
-                            Balance: {transaction.balance_after}
-                          </p>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                ) : (
-                  <div className="text-center py-8">
-                    <div className="text-4xl mb-2">📊</div>
-                    <p className="text-gray-400">No transactions yet</p>
-                  </div>
-                )}
               </div>
-            </SpotlightCard>
+            </div>
+          )}
+
+          {/* Terms and Conditions */}
+          <div className="space-y-4 mb-8">
+            <label className="flex items-start space-x-3">
+              <input
+                type="checkbox"
+                checked={acceptTerms}
+                onChange={(e) => setAcceptTerms(e.target.checked)}
+                className="mt-1 rounded border-gray-600 bg-white/10 text-blue-600 focus:ring-blue-500"
+              />
+              <span className="text-sm text-gray-300" style={{ fontFamily: 'SukhumvitSet' }}>
+                ฉันได้อ่านและยอมรับ{' '}
+                <button className="text-blue-400 hover:text-blue-300 hover:underline">ข้อตกลง</button> และ{' '}
+                <button className="text-blue-400 hover:text-blue-300 hover:underline">เงื่อนไข</button>
+              </span>
+            </label>
+            
+            <label className="flex items-start space-x-3">
+              <input
+                type="checkbox"
+                className="mt-1 rounded border-gray-600 bg-white/10 text-blue-600 focus:ring-blue-500"
+              />
+              <span className="text-sm text-gray-300" style={{ fontFamily: 'SukhumvitSet' }}>
+                หลีกเลี่ยงการโอนย้ายจาก <strong className="text-white">23:00 ถึง 00:10 น.</strong>
+              </span>
+            </label>
           </div>
 
-          {/* Credit Info */}
-          <SpotlightCard
-            hsl
-            hslMin={60}
-            hslMax={100}
-            className="w-full rounded-xl bg-white/10 p-8 shadow-xl shadow-white/2.5"
-          >
-            <div className="absolute inset-px rounded-[calc(theme(borderRadius.xl)-1px)] bg-zinc-800/50"></div>
-            <div className="absolute inset-0 bg-[radial-gradient(40%_128px_at_50%_0%,theme(backgroundColor.white/5%),transparent)]"></div>
-            <div className="relative">
-              <h3 className="text-2xl font-bold text-white mb-4">
-                💰 Credit Information
-              </h3>
-              <ul className="text-gray-300 space-y-2">
-                <li className="flex items-center"><span className="w-2 h-2 bg-yellow-400 rounded-full mr-3"></span>Credits are used to purchase items in the shop</li>
-                <li className="flex items-center"><span className="w-2 h-2 bg-yellow-400 rounded-full mr-3"></span>Earn credits through gameplay and promotions</li>
-                <li className="flex items-center"><span className="w-2 h-2 bg-yellow-400 rounded-full mr-3"></span>Credits never expire</li>
-                <li className="flex items-center"><span className="w-2 h-2 bg-yellow-400 rounded-full mr-3"></span>Secure payment processing via Stripe</li>
-              </ul>
+          {/* Warnings */}
+          <div className="bg-blue-900/30 border border-blue-500/30 p-6 rounded-lg backdrop-blur-sm">
+            <div className="flex justify-between items-center mb-4">
+              <h3 className="font-semibold text-white" style={{ fontFamily: 'SukhumvitSet' }}>ข้อควรระวัง</h3>
+              <button className="text-blue-400 hover:text-blue-300 text-sm hover:underline" style={{ fontFamily: 'SukhumvitSet' }}>ติดต่อแอดมิน</button>
             </div>
-          </SpotlightCard>
+            <ul className="text-sm text-gray-300 space-y-2" style={{ fontFamily: 'SukhumvitSet' }}>
+              <li className="flex items-start">
+                <span className="w-2 h-2 bg-blue-400 rounded-full mr-3 mt-2 flex-shrink-0"></span>
+                หลีกจากโอนแล้วอาจจะใช้เวลานาน <strong className="text-white">1 - 5 นาที</strong>
+              </li>
+              <li className="flex items-start">
+                <span className="w-2 h-2 bg-blue-400 rounded-full mr-3 mt-2 flex-shrink-0"></span>
+                เนื่องจากธนาคารปิดปรับปรุงช่วงเวลา <strong className="text-white">23:00 ถึง 00:10</strong> หลีกเลี่ยงการโอนย้ายจากดังกล่าว
+              </li>
+              <li className="flex items-start">
+                <span className="w-2 h-2 bg-blue-400 rounded-full mr-3 mt-2 flex-shrink-0"></span>
+                หากสลิปถูกต้องแล้ว <strong className="text-white">แต่ยอดเงินไม่เข้า</strong> โปรดติดต่อแอดมิน
+              </li>
+            </ul>
+          </div>
+
         </div>
       </div>
 

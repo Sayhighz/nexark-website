@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log"
 	"strconv"
+	"strings"
 	"sync"
 	"time"
 
@@ -33,7 +34,7 @@ func NewServerService(db *gorm.DB) *ServerService {
 
 func (s *ServerService) GetServers(ctx context.Context) ([]models.Server, error) {
 	var servers []models.Server
-	err := s.db.Find(&servers).Error
+	err := s.db.Select("*").Find(&servers).Error
 	if err != nil {
 		return nil, fmt.Errorf("failed to get servers: %w", err)
 	}
@@ -43,7 +44,9 @@ func (s *ServerService) GetServers(ctx context.Context) ([]models.Server, error)
 
 func (s *ServerService) GetServerByID(ctx context.Context, serverID uint) (*models.Server, error) {
 	var server models.Server
-	err := s.db.Where("server_id = ?", serverID).First(&server).Error
+	err := s.db.Where("server_id = ?", serverID).
+		Select("server_id, server_name, server_type, ip_address, port, rcon_port, rcon_password, is_online, current_players, max_players, last_ping, details").
+		First(&server).Error
 	if err != nil {
 		if err == gorm.ErrRecordNotFound {
 			return nil, fmt.Errorf("server not found")
@@ -55,15 +58,36 @@ func (s *ServerService) GetServerByID(ctx context.Context, serverID uint) (*mode
 }
 
 func (s *ServerService) GetServerByIdentifier(ctx context.Context, identifier string) (*models.Server, error) {
-	// Try parsing as uint first
+	// Try numeric ID first
 	if id, err := strconv.ParseUint(identifier, 10, 32); err == nil {
 		return s.GetServerByID(ctx, uint(id))
 	}
 
-	// Fallback to query by server_name
+	// Support slugs and friendly names: x25 -> server_id 1, x100 -> server_id 2
+	key := strings.ToLower(strings.TrimSpace(identifier))
 	var server models.Server
-	err := s.db.Where("server_name = ?", identifier).First(&server).Error
-	if err != nil {
+
+	switch key {
+	case "x25", "25", "ark x25", "x25-pvp", "x25pvp":
+		// Prefer explicit mapping to ID 1 if exists
+		if err := s.db.Select("*").Where("server_id = ?", 1).First(&server).Error; err == nil {
+			return &server, nil
+		}
+		// Fallback by name containing x25
+		if err := s.db.Select("*").Where("server_name LIKE ?", "%x25%").First(&server).Error; err == nil {
+			return &server, nil
+		}
+	case "x100", "100", "ark x100", "x100-pvp", "x100pvp":
+		if err := s.db.Select("*").Where("server_id = ?", 2).First(&server).Error; err == nil {
+			return &server, nil
+		}
+		if err := s.db.Select("*").Where("server_name LIKE ?", "%x100%").First(&server).Error; err == nil {
+			return &server, nil
+		}
+	}
+
+	// Fallback to exact server_name
+	if err := s.db.Select("*").Where("server_name = ?", identifier).First(&server).Error; err != nil {
 		if err == gorm.ErrRecordNotFound {
 			return nil, fmt.Errorf("server not found")
 		}

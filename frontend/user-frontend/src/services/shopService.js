@@ -19,27 +19,22 @@ export const shopService = {
     return response.data;
   },
 
-  // Add item to cart
-  addToCart: async (cartData) => {
-    const response = await api.post('/cart/add', cartData);
+  // Buy item (send RCON command)
+  buyItem: async (itemId, serverId = null) => {
+    const response = await api.post('/shop/buy', {
+      item_id: itemId,
+      server_id: serverId
+    });
     return response.data;
   },
 
-  // Get user cart
-  getCart: async () => {
-    const response = await api.get('/cart');
-    return response.data;
-  },
-
-  // Update cart item
-  updateCartItem: async (cartId, updateData) => {
-    const response = await api.put(`/cart/${cartId}`, updateData);
-    return response.data;
-  },
-
-  // Remove item from cart
-  removeFromCart: async (cartId) => {
-    const response = await api.delete(`/cart/${cartId}`);
+  // Gift item to another player
+  giftItem: async (itemId, recipientSteamId, serverId = null) => {
+    const response = await api.post('/shop/gift', {
+      item_id: itemId,
+      recipient_steam_id: recipientSteamId,
+      server_id: serverId
+    });
     return response.data;
   }
 };

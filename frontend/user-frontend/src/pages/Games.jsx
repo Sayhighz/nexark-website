@@ -1,14 +1,11 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuthContext } from '../contexts/AuthContext';
 import Loading from '../components/common/Loading';
 import ErrorMessage from '../components/common/ErrorMessage';
 import SpotlightButton from '../components/ui/SpotlightButton';
 
 const Games = () => {
-  const { isAuthenticated } = useAuthContext();
-  const navigate = useNavigate();
-  const location = useLocation();
+  const { isAuthenticated, login } = useAuthContext();
 
   const [spinWheelData, setSpinWheelData] = useState(null);
   const [dailyRewardData, setDailyRewardData] = useState(null);
@@ -42,7 +39,7 @@ const Games = () => {
 
     // Require login to perform spin (gacha action)
     if (!isAuthenticated) {
-      navigate('/login', { replace: false, state: { from: location } });
+      login();
       return;
     }
 
@@ -65,7 +62,8 @@ const Games = () => {
         can_spin: false,
         next_spin_time: new Date(Date.now() + 24 * 60 * 60 * 1000) // 24 hours from now
       }));
-    } catch (err) {
+    } catch (error) {
+      console.error('Spin wheel error:', error);
       setError('Failed to spin the wheel');
     } finally {
       setIsSpinning(false);
@@ -77,7 +75,7 @@ const Games = () => {
 
     // Require login to claim daily rewards
     if (!isAuthenticated) {
-      navigate('/login', { replace: false, state: { from: location } });
+      login();
       return;
     }
 
@@ -96,7 +94,8 @@ const Games = () => {
         can_claim: false,
         streak: prev.streak + 1
       }));
-    } catch (err) {
+    } catch (error) {
+      console.error('Daily reward error:', error);
       setError('Failed to claim daily reward');
     } finally {
       setLoading(false);
@@ -237,8 +236,8 @@ const Games = () => {
               <li>Build your streak for bonuses</li>
               <li>Never miss a day!</li>
             </ul>
-          </div>
-        </div>
+    </div>
+  </div>
       </div>
     </div>
   );

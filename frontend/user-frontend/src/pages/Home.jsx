@@ -5,8 +5,8 @@ import BackgroundEffects from '../components/site/BackgroundEffects';
 import Hero from '../components/site/Hero';
 import VideoBackground from '../components/site/VideoBackground';
 import StarBackground from '../components/site/StarBackground';
-import PVPSection from '../components/site/PVPSection';
 import ServerModesSection from '../components/site/ServerModesSection';
+import { Sparkles } from '../components/ui/Sparkles';
 
 const Home = () => {
 
@@ -26,8 +26,16 @@ const Home = () => {
             <Hero />
           </div>
 
+          {/* Sparkle effects at bottom border - Following exact example pattern */}
+          <div className="relative -mt-16 h-32 w-full overflow-hidden [mask-image:radial-gradient(50%_50%,white,transparent)] before:absolute before:inset-0 before:bg-[radial-gradient(circle_at_bottom_center,#8350e8,transparent_70%)] before:opacity-40 after:absolute after:-left-1/2 after:top-1/2 after:aspect-[1/0.7] after:w-[200%] after:rounded-[100%] after:border-t after:border-[#7876c566] after:bg-zinc-900 z-10 pointer-events-none">
+            <Sparkles
+              density={1200}
+              className="absolute inset-x-0 bottom-0 h-full w-full [mask-image:radial-gradient(50%_50%,white,transparent_85%)]"
+            />
+          </div>
+          
           {/* Subtle seamless transition */}
-          <div className="absolute bottom-0 left-0 right-0 h-8 bg-gradient-to-t from-black/80 to-transparent z-10 pointer-events-none"></div>
+          <div className="absolute bottom-0 left-0 right-0 h-8 bg-gradient-to-t from-black/80 to-transparent z-20 pointer-events-none"></div>
         </section>
       </Element>
 
@@ -70,16 +78,9 @@ const Home = () => {
           </div>
 
           {/* Subtle seamless transition to bottom */}
-          <div className="absolute bottom-0 left-0 right-0 h-8 bg-gradient-to-t from-black/80 to-transparent z-5 pointer-events-none"></div>
+          <div className="absolute bottom-0 left-0 right-0 h-8 bg-gradient-to-t from-black/80 to-transparent z-20 pointer-events-none"></div>
         </section>
       </Element>
-      
-      {/* PVP Section */}
-      <Element name="pvp" className="element">
-        <PVPSection />
-      </Element>
-
-      {/* Marquee Section */}
 
       {/* Server Modes Section */}
       <Element name="servers" className="element">

@@ -4,7 +4,6 @@ import { Card, Row, Col, Typography, Statistic, Button, Space } from 'antd';
 import {
   WalletOutlined,
   DesktopOutlined,
-  ShoppingCartOutlined,
   PlayCircleOutlined,
   ShoppingOutlined,
   DollarOutlined,
@@ -13,11 +12,8 @@ import {
 import { useAuthContext } from '../contexts/AuthContext';
 import { useCredits } from '../hooks/useCredits';
 import { useServers } from '../hooks/useServers';
-import { useShop } from '../hooks/useShop';
 import Loading from '../components/common/Loading';
 import ErrorMessage from '../components/common/ErrorMessage';
-import StarBackground from '../components/site/StarBackground';
-import Navbar from '../components/site/Navbar';
 import { SpotlightCard } from '../components/ui/SpotlightCard';
 
 const { Title, Paragraph } = Typography;
@@ -26,11 +22,9 @@ const Dashboard = () => {
   const { user } = useAuthContext();
   const { balance, getBalance, loading: creditsLoading, error: creditsError } = useCredits();
   const { servers, getServers, loading: serversLoading } = useServers();
-  const { cart, getCart, loading: cartLoading } = useShop();
   const [stats, setStats] = useState({
     totalServers: 0,
-    onlineServers: 0,
-    cartItems: 0
+    onlineServers: 0
   });
 
   useEffect(() => {
@@ -39,8 +33,7 @@ const Dashboard = () => {
       try {
         await Promise.all([
           getBalance(),
-          getServers(),
-          getCart()
+          getServers()
         ]);
       } catch (error) {
         console.error('Failed to load dashboard data:', error);
@@ -48,23 +41,20 @@ const Dashboard = () => {
     };
 
     loadDashboardData();
-  }, [getBalance, getServers, getCart]);
+  }, [getBalance, getServers]);
 
   useEffect(() => {
-    if (servers && cart) {
+    if (servers) {
       setStats({
         totalServers: servers.length,
-        onlineServers: servers.filter(s => s.status === 'online').length,
-        cartItems: cart.length
+        onlineServers: servers.filter(s => s.status === 'online').length
       });
     }
-  }, [servers, cart]);
+  }, [servers]);
 
-  if (creditsLoading || serversLoading || cartLoading) {
+  if (creditsLoading || serversLoading) {
     return (
-      <div className="min-h-screen bg-black relative overflow-hidden">
-        <Navbar />
-        <StarBackground />
+      <div className="space-y-6">
         <div className="relative z-20 pt-20">
           <Loading size="lg" message="Loading dashboard..." />
         </div>
@@ -73,9 +63,7 @@ const Dashboard = () => {
   }
 
   return (
-    <div className="min-h-screen bg-black text-white relative overflow-hidden">
-      <Navbar />
-      <StarBackground />
+    <div className="space-y-6">
       
       {/* Hero Section */}
       <div className="relative pt-20">
@@ -154,28 +142,6 @@ const Dashboard = () => {
               </div>
             </SpotlightCard>
 
-            {/* Cart Card */}
-            <SpotlightCard
-              hsl
-              hslMin={20}
-              hslMax={60}
-              className="w-full rounded-xl bg-white/10 p-6 shadow-xl shadow-white/2.5"
-            >
-              <div className="absolute inset-px rounded-[calc(theme(borderRadius.xl)-1px)] bg-zinc-800/50"></div>
-              <div className="relative">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <div className="flex items-center gap-2 mb-2">
-                      <ShoppingCartOutlined className="text-orange-400 text-xl" />
-                      <h3 className="text-lg font-semibold text-white">Cart Items</h3>
-                    </div>
-                    <p className="text-3xl font-bold text-orange-400">
-                      {stats.cartItems}
-                    </p>
-                  </div>
-                </div>
-              </div>
-            </SpotlightCard>
           </div>
 
           {/* Quick Actions */}
