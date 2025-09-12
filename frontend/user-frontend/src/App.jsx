@@ -4,6 +4,7 @@ import { AuthProvider } from './contexts/AuthContext';
 import Layout from './components/layout/Layout';
 import Navbar from './components/site/Navbar';
 import ProtectedRoute from './components/common/ProtectedRoute';
+import '@ant-design/v5-patch-for-react-19';
 
  // Pages
  import Home from './pages/Home';

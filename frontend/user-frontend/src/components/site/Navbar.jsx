@@ -9,6 +9,7 @@ const Navbar = () => {
   const { isAuthenticated, login, user, logout } = useAuthContext();
   const [isScrolled, setIsScrolled] = useState(false);
   const [activeDropdown, setActiveDropdown] = useState(null);
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const location = useLocation();
   const navigate = useNavigate();
 
@@ -25,6 +26,9 @@ const Navbar = () => {
     const handleClickOutside = (event) => {
       if (!event.target.closest('.dropdown-container')) {
         setActiveDropdown(null);
+      }
+      if (!event.target.closest('.mobile-menu-container')) {
+        setIsMobileMenuOpen(false);
       }
     };
 
@@ -248,6 +252,22 @@ const Navbar = () => {
             </div>
           </div>
 
+          {/* Mobile Menu Button */}
+          <div className="md:hidden mobile-menu-container">
+            <button
+              onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+              className="text-gray-300 hover:text-white transition-colors p-2"
+            >
+              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                {isMobileMenuOpen ? (
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                ) : (
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
+                )}
+              </svg>
+            </button>
+          </div>
+
           {/* Profile/Sign in Button */}
           {isAuthenticated ? (
             <div className="dropdown-container relative">
@@ -333,6 +353,121 @@ const Navbar = () => {
           )}
         </div>
       </div>
+
+      {/* Mobile Menu */}
+      {isMobileMenuOpen && (
+        <div className="md:hidden bg-black/95 backdrop-blur-md border-t border-white/10">
+          <div className="px-6 py-4 space-y-4">
+            {/* X25 Section */}
+            <div>
+              <div className="text-white font-medium mb-2" style={{ fontFamily: 'SukhumvitSet' }}>X25 Server</div>
+              <div className="space-y-2 pl-4">
+                {serverSections.map((section) => (
+                  <button
+                    key={`x25-${section.id}`}
+                    onClick={() => {
+                      handleServerSectionClick('x25', section.id);
+                      setIsMobileMenuOpen(false);
+                    }}
+                    className="flex items-center space-x-3 text-gray-300 hover:text-white transition-colors w-full text-left py-2"
+                    style={{ fontFamily: 'SukhumvitSet' }}
+                  >
+                    <span className="text-gray-400">{section.icon}</span>
+                    <span>{section.name}</span>
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* X100 Section */}
+            <div>
+              <div className="text-white font-medium mb-2" style={{ fontFamily: 'SukhumvitSet' }}>X100 Server</div>
+              <div className="space-y-2 pl-4">
+                {serverSections.map((section) => (
+                  <button
+                    key={`x100-${section.id}`}
+                    onClick={() => {
+                      handleServerSectionClick('x100', section.id);
+                      setIsMobileMenuOpen(false);
+                    }}
+                    className="flex items-center space-x-3 text-gray-300 hover:text-white transition-colors w-full text-left py-2"
+                    style={{ fontFamily: 'SukhumvitSet' }}
+                  >
+                    <span className="text-gray-400">{section.icon}</span>
+                    <span>{section.name}</span>
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Store Section */}
+            <div>
+              <div className="text-white font-medium mb-2" style={{ fontFamily: 'SukhumvitSet' }}>Store</div>
+              <div className="space-y-2 pl-4">
+                <RouterLink
+                  to="/shop?server=x25"
+                  onClick={() => setIsMobileMenuOpen(false)}
+                  className="block text-gray-300 hover:text-white transition-colors py-2"
+                  style={{ fontFamily: 'SukhumvitSet' }}
+                >
+                  X25 Shop
+                </RouterLink>
+                <RouterLink
+                  to="/shop?server=x100"
+                  onClick={() => setIsMobileMenuOpen(false)}
+                  className="block text-gray-300 hover:text-white transition-colors py-2"
+                  style={{ fontFamily: 'SukhumvitSet' }}
+                >
+                  X100 Shop
+                </RouterLink>
+                <RouterLink
+                  to="/subscribe"
+                  onClick={() => setIsMobileMenuOpen(false)}
+                  className="block text-gray-300 hover:text-white transition-colors py-2"
+                  style={{ fontFamily: 'SukhumvitSet' }}
+                >
+                  Subscribe
+                </RouterLink>
+              </div>
+            </div>
+
+            {/* Account Section for Mobile */}
+            {isAuthenticated && (
+              <div className="border-t border-white/10 pt-4">
+                <div className="text-white font-medium mb-2" style={{ fontFamily: 'SukhumvitSet' }}>Account</div>
+                <div className="space-y-2 pl-4">
+                  <RouterLink
+                    to="/account/credits"
+                    onClick={() => setIsMobileMenuOpen(false)}
+                    className="block text-gray-300 hover:text-white transition-colors py-2"
+                    style={{ fontFamily: 'SukhumvitSet' }}
+                  >
+                    เติมเครดิต
+                  </RouterLink>
+                  <RouterLink
+                    to="/account/transactions"
+                    onClick={() => setIsMobileMenuOpen(false)}
+                    className="block text-gray-300 hover:text-white transition-colors py-2"
+                    style={{ fontFamily: 'SukhumvitSet' }}
+                  >
+                    ประวัติการเติมเงิน
+                  </RouterLink>
+                  <button
+                    onClick={() => {
+                      setIsMobileMenuOpen(false);
+                      logout();
+                    }}
+                    className="block text-gray-300 hover:text-white transition-colors py-2 w-full text-left"
+                    style={{ fontFamily: 'SukhumvitSet' }}
+                  >
+                    ออกจากระบบ
+                  </button>
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
     </nav>
   );
 };

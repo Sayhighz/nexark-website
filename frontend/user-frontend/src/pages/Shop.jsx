@@ -188,7 +188,7 @@ const Shop = () => {
       try {
         notification.warning({
           message: 'เครดิตไม่เพียงพอ',
-          description: desc,
+          description: 'กรุณาเติมเครดิตก่อนทำการซื้อไอเทม',
           placement: 'topRight',
         });
       } catch {
@@ -200,8 +200,6 @@ const Shop = () => {
     } else {
       setTimeout(run, 0);
     }
-    // Fallback toast to guarantee visibility
-    message.warning(desc || 'เครดิตไม่เพียงพอสำหรับการซื้อไอเทมนี้');
   };
 
   const handleBuyItem = async (item, e) => {
@@ -240,9 +238,6 @@ const Shop = () => {
             const backendMessage = errorObj.message || res?.message;
             let errorMessage = backendMessage || 'เกิดข้อผิดพลาดในการซื้อไอเทม';
 
-            // ตาม Flow ใหม่:
-            // - เครดิตไม่พอ => notification.warning
-            // - ข้อผิดพลาดอื่น => notification.error
             if (errorCode === 'INSUFFICIENT_CREDITS') {
               if (!backendMessage) {
                 errorMessage = 'เครดิตไม่เพียงพอสำหรับการซื้อไอเทมนี้';
@@ -567,14 +562,14 @@ const Shop = () => {
             {filteredItems.map((item) => (
               <div
                 key={item.id || item.item_id}
-                className={`relative group bg-zinc-900/60 backdrop-blur-sm rounded-xl p-4 border transition-all duration-300 hover:bg-zinc-900/80 cursor-pointer ${
+                className={`relative group bg-zinc-900/60 backdrop-blur-sm rounded-xl p-4 border transition-all duration-300 hover:bg-zinc-900/80 cursor-pointer flex flex-col h-full ${
                   item.featured || item.is_featured ? 'border-blue-500/50 hover:border-blue-500' : 'border-white/10 hover:border-white/20'
                 }`}
                 onClick={() => handleViewDetails(item.id || item.item_id)}
               >
                 {/* Featured Badge */}
                 {(item.featured || item.is_featured) && (
-                  <div className="absolute top-2 left-2">
+                  <div className="absolute top-2 left-2 z-10">
                     <div className="bg-blue-600 text-white text-xs font-bold px-2 py-1 rounded-full flex items-center gap-1" style={{ fontFamily: 'SukhumvitSet' }}>
                       <StarOutlined /> แนะนำ
                     </div>
@@ -582,7 +577,7 @@ const Shop = () => {
                 )}
 
                 {/* Rarity Badge */}
-                <div className="absolute top-2 right-2">
+                <div className="absolute top-2 right-2 z-10">
                   <div className={`${getRarityColor(item.rarity)} text-white text-xs font-bold px-2 py-1 rounded-full`} style={{ fontFamily: 'SukhumvitSet' }}>
                     {getRarityText(item.rarity)}
                   </div>
@@ -596,31 +591,33 @@ const Shop = () => {
                   />
                 </div>
 
-                <div className="space-y-3">
-                  <h3 className="text-lg font-bold text-white" style={{ fontFamily: 'SukhumvitSet' }}>
-                    {item.name || item.item_name}
-                  </h3>
-                  <p className="text-sm text-gray-300 line-clamp-2" style={{ fontFamily: 'SukhumvitSet' }}>
-                    {item.description}
-                  </p>
+                <div className="flex flex-col flex-grow">
+                  <div className="flex-grow space-y-3">
+                    <h3 className="text-lg font-bold text-white" style={{ fontFamily: 'SukhumvitSet' }}>
+                      {item.name || item.item_name}
+                    </h3>
+                    <p className="text-sm text-gray-300 line-clamp-2" style={{ fontFamily: 'SukhumvitSet' }}>
+                      {item.description}
+                    </p>
 
-                  <div className="flex items-center justify-between">
-                    <span className="text-xl font-bold text-green-400" style={{ fontFamily: 'SukhumvitSet' }}>
-                      ฿{item.price.toLocaleString()}
-                    </span>
-                    <span className="text-xs text-gray-400" style={{ fontFamily: 'SukhumvitSet' }}>
-                      เหลือ {item.stock || item.stock_quantity}
-                    </span>
+                    <div className="flex items-center justify-between">
+                      <span className="text-xl font-bold text-green-400" style={{ fontFamily: 'SukhumvitSet' }}>
+                        ฿{item.price.toLocaleString()}
+                      </span>
+                      <span className="text-xs text-gray-400" style={{ fontFamily: 'SukhumvitSet' }}>
+                        เหลือ {item.stock || item.stock_quantity}
+                      </span>
+                    </div>
+
+                    <div className="flex items-center justify-between">
+                      <span className="text-sm text-blue-400 bg-blue-600/20 px-2 py-1 rounded-full" style={{ fontFamily: 'SukhumvitSet' }}>
+                        {item.category?.name}
+                      </span>
+                    </div>
                   </div>
 
-                  <div className="flex items-center justify-between mb-4">
-                    <span className="text-sm text-blue-400 bg-blue-600/20 px-2 py-1 rounded-full" style={{ fontFamily: 'SukhumvitSet' }}>
-                      {item.category?.name}
-                    </span>
-                  </div>
-
-                  {/* Action Buttons */}
-                  <div className="flex gap-2 mt-4">
+                  {/* Action Buttons - Always at bottom */}
+                  <div className="flex gap-2 mt-4 pt-4">
                     {isAuthenticated ? (
                       <>
                         <button
@@ -655,7 +652,6 @@ const Shop = () => {
                       </button>
                     )}
                   </div>
-
                 </div>
               </div>
             ))}

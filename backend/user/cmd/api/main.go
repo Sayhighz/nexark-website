@@ -40,9 +40,9 @@ func main() {
 	}
 
 	// Run database migrations on startup
-	if err := database.RunMigrations(db, "migrations"); err != nil {
-		log.Fatal("Failed to run migrations:", err)
-	}
+	// if err := database.RunMigrations(db, "migrations"); err != nil {
+	// 	log.Fatal("Failed to run migrations:", err)
+	// }
 
 	// Redis initialization skipped for testing
 
