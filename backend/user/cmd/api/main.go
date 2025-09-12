@@ -228,6 +228,10 @@ func setupRoutes(
 		shop.GET("/categories", shopHandler.GetCategories)
 		shop.GET("/items", middleware.ValidatePagination(), shopHandler.GetItems)
 		shop.GET("/items/:item_id", shopHandler.GetItemByID)
+
+		// Protected routes (auth required)
+		shop.POST("/buy", authMiddleware.RequireAuth(), shopHandler.BuyItem)
+		shop.POST("/gift", authMiddleware.RequireAuth(), shopHandler.GiftItem)
 	}
 
 	// ==========================================

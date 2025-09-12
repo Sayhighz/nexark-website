@@ -1,13 +1,14 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useShop } from '../hooks/useShop';
+import { useAuthContext } from '../contexts/AuthContext';
 import { shopService } from '../services/shopService';
 import Loading from '../components/common/Loading';
 import ErrorMessage from '../components/common/ErrorMessage';
 import GiftModal from '../components/GiftModal';
 import { SpotlightCard } from '../components/ui/SpotlightCard';
 import { Sparkles } from '../components/ui/Sparkles';
-import { message } from 'antd';
+import { message, Modal, notification } from 'antd';
 import {
   ShoppingCartOutlined,
   GiftOutlined,
@@ -17,18 +18,21 @@ import {
   BugOutlined,
   DollarOutlined,
   ToolOutlined,
-  CoffeeOutlined
+  CoffeeOutlined,
+  LoginOutlined
 } from '@ant-design/icons';
 
 const Shop = () => {
   const navigate = useNavigate();
   const { items, getItems, loading, error } = useShop();
+  const { isAuthenticated, login } = useAuthContext();
   const [selectedCategory, setSelectedCategory] = useState(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [giftModalVisible, setGiftModalVisible] = useState(false);
   const [selectedItemForGift, setSelectedItemForGift] = useState(null);
   const [giftLoading, setGiftLoading] = useState(false);
   const [buyLoading, setBuyLoading] = useState(false);
+  const [modal, modalContextHolder] = Modal.useModal();
 
   // Mock data for demonstration
   const mockCategories = [
@@ -178,28 +182,194 @@ const Shop = () => {
     navigate(`/shop/items/${itemId}`);
   };
 
+  // Helper: show insufficient credits warning robustly
+  const showInsufficientCredits = (desc) => {
+    const run = () => {
+      try {
+        notification.warning({
+          message: 'เครดิตไม่เพียงพอ',
+          description: desc,
+          placement: 'topRight',
+        });
+      } catch {
+        // no-op
+      }
+    };
+    if (typeof requestAnimationFrame === 'function') {
+      requestAnimationFrame(run);
+    } else {
+      setTimeout(run, 0);
+    }
+    // Fallback toast to guarantee visibility
+    message.warning(desc || 'เครดิตไม่เพียงพอสำหรับการซื้อไอเทมนี้');
+  };
+
   const handleBuyItem = async (item, e) => {
     e.stopPropagation();
 
-    try {
-      setBuyLoading(true);
-      const itemName = item.name || item.item_name;
-
-      // Call the buy API
-      await shopService.buyItem(item.id || item.item_id);
-
-      message.success(`ซื้อ ${itemName} สำเร็จ! ไอเทมจะถูกส่งไปยังเซิร์ฟเวอร์`);
-    } catch (error) {
-      console.error('Buy item error:', error);
-      const errorMessage = error.response?.data?.error?.message || 'เกิดข้อผิดพลาดในการซื้อไอเทม';
-      message.error(errorMessage);
-    } finally {
-      setBuyLoading(false);
+    // Check if user is authenticated
+    if (!isAuthenticated) {
+      message.warning('กรุณาเข้าสู่ระบบก่อนทำการซื้อ');
+      login();
+      return;
     }
+
+    const itemName = item.name || item.item_name;
+    const priceText = typeof item.price === 'number' ? item.price.toLocaleString() : item.price;
+
+    modal.confirm({
+      title: 'ยืนยันการซื้อ',
+      content: `คุณต้องการซื้อ ${itemName} ราคา ฿${priceText} ใช่หรือไม่?`,
+      okText: 'ยืนยัน',
+      cancelText: 'ยกเลิก',
+      centered: true,
+      onOk: async () => {
+        try {
+          setBuyLoading(true);
+
+          // เรียก API ซื้อไอเทม
+          const res = await shopService.buyItem(item.id || item.item_id);
+
+          // กรณี Backend ส่ง 200 แต่ไม่สำเร็จ:
+          // รองรับทั้งรูปแบบ success=false หรือมี error object กลับมา
+          const hasErrorObject = !!res?.error;
+          const isExplicitFail = res?.success === false;
+          if (isExplicitFail || hasErrorObject) {
+            const errorObj = res?.error || {};
+            const errorCode = errorObj.code || res?.error_code || res?.code;
+            const backendMessage = errorObj.message || res?.message;
+            let errorMessage = backendMessage || 'เกิดข้อผิดพลาดในการซื้อไอเทม';
+
+            // ตาม Flow ใหม่:
+            // - เครดิตไม่พอ => notification.warning
+            // - ข้อผิดพลาดอื่น => notification.error
+            if (errorCode === 'INSUFFICIENT_CREDITS') {
+              if (!backendMessage) {
+                errorMessage = 'เครดิตไม่เพียงพอสำหรับการซื้อไอเทมนี้';
+              }
+              console.log('INSUFFICIENT_CREDITS detected');
+              showInsufficientCredits(errorMessage);
+            } else if (errorCode === 'OUT_OF_STOCK') {
+              if (!backendMessage) {
+                errorMessage = 'ไอเทมนี้หมดสต๊อกแล้ว';
+              }
+              notification.error({
+                message: 'ซื้อไม่สำเร็จ',
+                description: errorMessage,
+                placement: 'topRight',
+              });
+            } else if (errorCode === 'ITEM_NOT_FOUND') {
+              if (!backendMessage) {
+                errorMessage = 'ไม่พบไอเทมนี้';
+              }
+              notification.error({
+                message: 'ซื้อไม่สำเร็จ',
+                description: errorMessage,
+                placement: 'topRight',
+              });
+            } else {
+              notification.error({
+                message: 'ซื้อไม่สำเร็จ',
+                description: errorMessage,
+                placement: 'topRight',
+              });
+            }
+            return;
+          }
+
+          // สำเร็จ: แสดง Modal และ Notification
+          // ป้องกันกรณีที่ backend เผลอส่ง error ทั้งที่ HTTP 200
+          if (res?.error) {
+            // ถ้ามี error object ให้จัดการเหมือน error (เพื่อความปลอดภัย)
+            const errCode = res?.error?.code;
+            const errMsg = res?.error?.message || 'เกิดข้อผิดพลาดในการซื้อไอเทม';
+            if (errCode === 'INSUFFICIENT_CREDITS') {
+              notification.warning({
+                message: 'เครดิตไม่เพียงพอ',
+                description: errMsg,
+                placement: 'topRight',
+              });
+            } else {
+              notification.error({
+                message: 'ซื้อไม่สำเร็จ',
+                description: errMsg,
+                placement: 'topRight',
+              });
+            }
+            return;
+          }
+
+          Modal.success({
+            title: 'สั่งซื้อสำเร็จ',
+            content: `ซื้อ ${itemName} เรียบร้อย ไอเทมจะถูกส่งไปยังเซิร์ฟเวอร์`,
+          });
+          notification.success({
+            message: 'สั่งซื้อสำเร็จ',
+            description: `ซื้อ ${itemName} สำเร็จ`,
+            placement: 'topRight',
+          });
+        } catch (error) {
+          console.error('Buy item error:', error);
+
+          // กรณีไม่ได้ล็อกอิน
+          if (error.response?.status === 401) {
+            message.error('กรุณาเข้าสู่ระบบก่อนทำการซื้อ');
+            login();
+            return;
+          }
+
+          // ตรวจจับ error แบบครอบคลุม (รวมกรณี HTTP 200 แต่ interceptor โยน error)
+          const data = error.response?.data || {};
+          const status = error.response?.status;
+          const errorObj = data.error || {};
+          const errorCode = errorObj.code || data.error_code || data.code;
+          let errorMessage = errorObj.message || data.message || 'เกิดข้อผิดพลาดในการซื้อไอเทม';
+
+          // Flow ใหม่:
+          // - INSUFFICIENT_CREDITS => notification.warning
+          // - อื่นๆ => notification.error
+          if (errorCode === 'INSUFFICIENT_CREDITS' || status === 200) {
+            // แสดงเตือนเครดิตไม่พอ แม้ interceptor จะจับเป็น error
+            if (!errorObj.message && !data.message) {
+              errorMessage = 'เครดิตไม่เพียงพอสำหรับการซื้อไอเทมนี้';
+            }
+            showInsufficientCredits(errorMessage);
+          } else if (errorCode === 'OUT_OF_STOCK') {
+            notification.error({
+              message: 'ซื้อไม่สำเร็จ',
+              description: 'ไอเทมนี้หมดสต๊อกแล้ว',
+              placement: 'topRight',
+            });
+          } else if (errorCode === 'ITEM_NOT_FOUND') {
+            notification.error({
+              message: 'ซื้อไม่สำเร็จ',
+              description: 'ไม่พบไอเทมนี้',
+              placement: 'topRight',
+            });
+          } else {
+            notification.error({
+              message: 'ซื้อไม่สำเร็จ',
+              description: errorMessage,
+              placement: 'topRight',
+            });
+          }
+        } finally {
+          setBuyLoading(false);
+        }
+      },
+    });
   };
 
   const handleGiftItem = (item, e) => {
     e.stopPropagation();
+    
+    // Check if user is authenticated
+    if (!isAuthenticated) {
+      message.warning('กรุณาเข้าสู่ระบบก่อนส่งของขวัญ');
+      login();
+      return;
+    }
+    
     setSelectedItemForGift(item);
     setGiftModalVisible(true);
   };
@@ -209,18 +379,75 @@ const Shop = () => {
       setGiftLoading(true);
       const itemName = selectedItemForGift.name || selectedItemForGift.item_name;
 
-      // Call the gift API
-      await shopService.giftItem(
+      // Call the gift API and interpret 200 responses with success=false
+      const res = await shopService.giftItem(
         selectedItemForGift.id || selectedItemForGift.item_id,
         recipientSteamId
       );
+
+      if (!res?.success) {
+        const errorCode = res?.error?.code;
+        let errorMessage = res?.error?.message || 'เกิดข้อผิดพลาดในการส่งของขวัญ';
+
+        // Provide user-friendly error messages
+        switch (errorCode) {
+          case 'INSUFFICIENT_CREDITS':
+            errorMessage = 'เครดิตไม่เพียงพอสำหรับการส่งของขวัญ';
+            break;
+          case 'OUT_OF_STOCK':
+            errorMessage = 'ไอเทมนี้หมดสต๊อกแล้ว';
+            break;
+          case 'ITEM_NOT_FOUND':
+            errorMessage = 'ไม่พบไอเทมนี้';
+            break;
+          case 'INVALID_STEAM_ID':
+            errorMessage = 'Steam ID ไม่ถูกต้อง';
+            break;
+          default:
+            break;
+        }
+
+        message.error(errorMessage);
+        return;
+      }
 
       message.success(`ส่งของขวัญ ${itemName} ให้ SteamID: ${recipientSteamId} สำเร็จ!`);
       setGiftModalVisible(false);
       setSelectedItemForGift(null);
     } catch (error) {
       console.error('Gift item error:', error);
-      const errorMessage = error.response?.data?.error?.message || 'เกิดข้อผิดพลาดในการส่งของขวัญ';
+      
+      // Handle specific authentication errors
+      if (error.response?.status === 401) {
+        message.error('กรุณาเข้าสู่ระบบก่อนส่งของขวัญ');
+        login();
+        setGiftModalVisible(false);
+        setSelectedItemForGift(null);
+        return;
+      }
+      
+      // Handle other errors
+      const errorCode = error.response?.data?.error?.code;
+      let errorMessage = error.response?.data?.error?.message || 'เกิดข้อผิดพลาดในการส่งของขวัญ';
+      
+      // Provide user-friendly error messages
+      switch (errorCode) {
+        case 'INSUFFICIENT_CREDITS':
+          errorMessage = 'เครดิตไม่เพียงพอสำหรับการส่งของขวัญ';
+          break;
+        case 'OUT_OF_STOCK':
+          errorMessage = 'ไอเทมนี้หมดสต๊อกแล้ว';
+          break;
+        case 'ITEM_NOT_FOUND':
+          errorMessage = 'ไม่พบไอเทมนี้';
+          break;
+        case 'INVALID_STEAM_ID':
+          errorMessage = 'Steam ID ไม่ถูกต้อง';
+          break;
+        default:
+          break;
+      }
+      
       message.error(errorMessage);
     } finally {
       setGiftLoading(false);
@@ -235,6 +462,7 @@ const Shop = () => {
   if (loading) {
     return (
       <div className="space-y-6">
+        {modalContextHolder}
         <div className="relative z-20 pt-20">
           <Loading size="lg" message="Loading shop..." />
         </div>
@@ -244,6 +472,7 @@ const Shop = () => {
 
   return (
     <div className="space-y-6">
+      {modalContextHolder}
       
       {/* ServerHero Style Header */}
       <>
@@ -392,23 +621,39 @@ const Shop = () => {
 
                   {/* Action Buttons */}
                   <div className="flex gap-2 mt-4">
-                    <button
-                      onClick={(e) => handleBuyItem(item, e)}
-                      disabled={buyLoading}
-                      className="flex-1 bg-white/10 hover:bg-white/20 text-white border border-white/20 px-3 py-1.5 rounded-lg text-sm font-medium transition-all duration-200 flex items-center justify-center gap-1.5 backdrop-blur-sm disabled:opacity-50 disabled:cursor-not-allowed"
-                      style={{ fontFamily: 'SukhumvitSet' }}
-                    >
-                      <ShoppingCartOutlined />
-                      {buyLoading ? 'กำลังซื้อ...' : 'ซื้อ'}
-                    </button>
-                    <button
-                      onClick={(e) => handleGiftItem(item, e)}
-                      className="flex-1 bg-white/10 hover:bg-white/20 text-white border border-white/20 px-3 py-1.5 rounded-lg text-sm font-medium transition-all duration-200 flex items-center justify-center gap-1.5 backdrop-blur-sm"
-                      style={{ fontFamily: 'SukhumvitSet' }}
-                    >
-                      <GiftOutlined />
-                      ของขวัญ
-                    </button>
+                    {isAuthenticated ? (
+                      <>
+                        <button
+                          onClick={(e) => handleBuyItem(item, e)}
+                          disabled={buyLoading}
+                          className="flex-1 bg-white/10 hover:bg-white/20 text-white border border-white/20 px-3 py-1.5 rounded-lg text-sm font-medium transition-all duration-200 flex items-center justify-center gap-1.5 backdrop-blur-sm disabled:opacity-50 disabled:cursor-not-allowed"
+                          style={{ fontFamily: 'SukhumvitSet' }}
+                        >
+                          <ShoppingCartOutlined />
+                          {buyLoading ? 'กำลังซื้อ...' : 'ซื้อ'}
+                        </button>
+                        <button
+                          onClick={(e) => handleGiftItem(item, e)}
+                          className="flex-1 bg-white/10 hover:bg-white/20 text-white border border-white/20 px-3 py-1.5 rounded-lg text-sm font-medium transition-all duration-200 flex items-center justify-center gap-1.5 backdrop-blur-sm"
+                          style={{ fontFamily: 'SukhumvitSet' }}
+                        >
+                          <GiftOutlined />
+                          ของขวัญ
+                        </button>
+                      </>
+                    ) : (
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          login();
+                        }}
+                        className="w-full bg-blue-600 hover:bg-blue-700 text-white border border-blue-500 px-3 py-1.5 rounded-lg text-sm font-medium transition-all duration-200 flex items-center justify-center gap-1.5 backdrop-blur-sm"
+                        style={{ fontFamily: 'SukhumvitSet' }}
+                      >
+                        <LoginOutlined />
+                        เข้าสู่ระบบเพื่อซื้อ
+                      </button>
+                    )}
                   </div>
 
                 </div>
