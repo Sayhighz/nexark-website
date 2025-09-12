@@ -5,8 +5,10 @@ import ErrorMessage from '../components/common/ErrorMessage';
 import { SpotlightCard } from '../components/ui/SpotlightCard';
 import SpotlightButton from '../components/ui/SpotlightButton';
 import { Sparkles } from '../components/ui/Sparkles';
+import { useTranslation } from 'react-i18next';
 
 const Credits = () => {
+  const { t } = useTranslation();
   const {
     getBalance,
     topUp,
@@ -68,7 +70,7 @@ const Credits = () => {
 
   const handleTopUp = async (pkg) => {
     if (!acceptTerms) {
-      alert('กรุณายอมรับข้อตกลงและเงื่อนไข');
+      alert(t('credits.acceptTermsLabel'));
       return;
     }
 
@@ -127,10 +129,10 @@ const Credits = () => {
         <div className="relative pt-20 pb-8">
           <div className="relative z-20 text-center px-4">
             <h1 className="text-5xl font-bold mb-4 text-white" style={{ fontFamily: 'SukhumvitSet' }}>
-              เติมเครดิต
+              {t('credits.title')}
             </h1>
             <p className="text-xl text-gray-200 max-w-2xl mx-auto leading-relaxed" style={{ fontFamily: 'SukhumvitSet' }}>
-              เลือกแพ็คเกจเติมเครดิตที่เหมาะสมกับคุณ พร้อมโบนัสพิเศษ
+              {t('credits.subtitle')}
             </p>
           </div>
         </div>
@@ -169,7 +171,7 @@ const Credits = () => {
 
           {/* Package Selection */}
           <div className="mb-8">
-            <h2 className="text-xl font-bold text-white mb-6" style={{ fontFamily: 'SukhumvitSet' }}>เลือกแพ็คเกจ</h2>
+            <h2 className="text-xl font-bold text-white mb-6" style={{ fontFamily: 'SukhumvitSet' }}>{t('credits.selectPackage')}</h2>
             <div className="grid grid-cols-4 gap-4">
               {packages.map((pkg, index) => (
                 <div
@@ -184,20 +186,20 @@ const Credits = () => {
                   {/* Bonus Badge */}
                   {pkg.bonus > 0 && (
                     <div className="absolute -top-2 -right-2 bg-gradient-to-r from-yellow-500 to-orange-500 text-black text-xs font-bold px-2 py-1 rounded-full" style={{ fontFamily: 'SukhumvitSet' }}>
-                      +{pkg.bonus} โบนัส
+                      {t('credits.bonus', { currency: t('common.currencySymbol'), amount: pkg.bonus })}
                     </div>
                   )}
                   
                   {/* Package Content */}
                   <div className="text-center flex-1 flex flex-col justify-center">
                     <div className="text-2xl font-bold text-white mb-2" style={{ fontFamily: 'SukhumvitSet' }}>
-                      ฿{pkg.amount.toLocaleString()}
+                      {t('common.currencySymbol')}{pkg.amount.toLocaleString()}
                     </div>
                     
                     <div className="h-6 mb-2">
                       {pkg.bonus > 0 ? (
                         <div className="text-green-400 text-sm" style={{ fontFamily: 'SukhumvitSet' }}>
-                          + ฿{pkg.bonus} โบนัส
+                          {t('credits.bonus', { currency: t('common.currencySymbol'), amount: pkg.bonus })}
                         </div>
                       ) : (
                         <div className="text-sm text-transparent">-</div>
@@ -205,7 +207,7 @@ const Credits = () => {
                     </div>
                     
                     <div className="text-gray-300 text-sm mb-4" style={{ fontFamily: 'SukhumvitSet' }}>
-                      รวมได้ ฿{(pkg.amount + pkg.bonus).toLocaleString()}
+                      {t('common.currencySymbol')}{(pkg.amount + pkg.bonus).toLocaleString()}
                     </div>
                   </div>
                   
@@ -220,14 +222,14 @@ const Credits = () => {
                       className="w-full py-2 bg-blue-600 text-white rounded-full hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                       style={{ fontFamily: 'SukhumvitSet' }}
                     >
-                      เติมเงิน
+                      {t('credits.topUpButton')}
                     </button>
                   </div>
                   
                   {/* Popular Badge for best value */}
                   {pkg.amount === 1000 && (
                     <div className="absolute -top-3 left-1/2 transform -translate-x-1/2 bg-gradient-to-r from-purple-600 to-pink-600 text-white text-xs font-bold px-3 py-1 rounded-full" style={{ fontFamily: 'SukhumvitSet' }}>
-                      คุ้มที่สุด
+                      {t('credits.bestValue')}
                     </div>
                   )}
                 </div>
@@ -243,8 +245,8 @@ const Credits = () => {
                   <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
                 </svg>
                 <div>
-                  <div className="text-green-300 font-medium" style={{ fontFamily: 'SukhumvitSet' }}>การชำระเงินสำเร็จ!</div>
-                  <div className="text-green-400 text-sm" style={{ fontFamily: 'SukhumvitSet' }}>เครดิตของคุณได้รับการอัปเดตแล้ว</div>
+                  <div className="text-green-300 font-medium" style={{ fontFamily: 'SukhumvitSet' }}>{t('credits.successTitle')}</div>
+                  <div className="text-green-400 text-sm" style={{ fontFamily: 'SukhumvitSet' }}>{t('credits.successDesc')}</div>
                 </div>
               </div>
             </div>
@@ -256,8 +258,8 @@ const Credits = () => {
               <div className="flex items-center space-x-3">
                 <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-400"></div>
                 <div>
-                  <div className="text-blue-300 font-medium" style={{ fontFamily: 'SukhumvitSet' }}>กำลังดำเนินการ...</div>
-                  <div className="text-blue-400 text-sm" style={{ fontFamily: 'SukhumvitSet' }}>กรุณารอสักครู่</div>
+                  <div className="text-blue-300 font-medium" style={{ fontFamily: 'SukhumvitSet' }}>{t('credits.processing')}</div>
+                  <div className="text-blue-400 text-sm" style={{ fontFamily: 'SukhumvitSet' }}>{t('credits.pleaseWait')}</div>
                 </div>
               </div>
             </div>
@@ -273,9 +275,10 @@ const Credits = () => {
                 className="mt-1 rounded border-gray-600 bg-white/10 text-blue-600 focus:ring-blue-500"
               />
               <span className="text-sm text-gray-300" style={{ fontFamily: 'SukhumvitSet' }}>
-                ฉันได้อ่านและยอมรับ{' '}
-                <button className="text-blue-400 hover:text-blue-300 hover:underline">ข้อตกลง</button> และ{' '}
-                <button className="text-blue-400 hover:text-blue-300 hover:underline">เงื่อนไข</button>
+                {t('credits.acceptTermsLabel')}{' '}
+                <button className="text-blue-400 hover:text-blue-300 hover:underline">{t('credits.terms')}</button> {' '}
+                {t('common.and') ? t('common.and') : ''} {' '}
+                <button className="text-blue-400 hover:text-blue-300 hover:underline">{t('credits.conditions')}</button>
               </span>
             </label>
             
@@ -285,7 +288,7 @@ const Credits = () => {
                 className="mt-1 rounded border-gray-600 bg-white/10 text-blue-600 focus:ring-blue-500"
               />
               <span className="text-sm text-gray-300" style={{ fontFamily: 'SukhumvitSet' }}>
-                หลีกเลี่ยงการโอนย้ายจาก <strong className="text-white">23:00 ถึง 00:10 น.</strong>
+                {t('credits.avoidTransferWindow')}
               </span>
             </label>
           </div>
@@ -293,21 +296,21 @@ const Credits = () => {
           {/* Warnings */}
           <div className="bg-blue-900/30 border border-blue-500/30 p-6 rounded-lg backdrop-blur-sm">
             <div className="flex justify-between items-center mb-4">
-              <h3 className="font-semibold text-white" style={{ fontFamily: 'SukhumvitSet' }}>ข้อควรระวัง</h3>
-              <button className="text-blue-400 hover:text-blue-300 text-sm hover:underline" style={{ fontFamily: 'SukhumvitSet' }}>ติดต่อแอดมิน</button>
+              <h3 className="font-semibold text-white" style={{ fontFamily: 'SukhumvitSet' }}>{t('credits.warnings.title')}</h3>
+              <button className="text-blue-400 hover:text-blue-300 text-sm hover:underline" style={{ fontFamily: 'SukhumvitSet' }}>{t('credits.warnings.contactAdmin')}</button>
             </div>
             <ul className="text-sm text-gray-300 space-y-2" style={{ fontFamily: 'SukhumvitSet' }}>
               <li className="flex items-start">
                 <span className="w-2 h-2 bg-blue-400 rounded-full mr-3 mt-2 flex-shrink-0"></span>
-                หลีกจากโอนแล้วอาจจะใช้เวลานาน <strong className="text-white">1 - 5 นาที</strong>
+                {t('credits.warnings.w1')}
               </li>
               <li className="flex items-start">
                 <span className="w-2 h-2 bg-blue-400 rounded-full mr-3 mt-2 flex-shrink-0"></span>
-                เนื่องจากธนาคารปิดปรับปรุงช่วงเวลา <strong className="text-white">23:00 ถึง 00:10</strong> หลีกเลี่ยงการโอนย้ายจากดังกล่าว
+                {t('credits.warnings.w2')}
               </li>
               <li className="flex items-start">
                 <span className="w-2 h-2 bg-blue-400 rounded-full mr-3 mt-2 flex-shrink-0"></span>
-                หากสลิปถูกต้องแล้ว <strong className="text-white">แต่ยอดเงินไม่เข้า</strong> โปรดติดต่อแอดมิน
+                {t('credits.warnings.w3')}
               </li>
             </ul>
           </div>

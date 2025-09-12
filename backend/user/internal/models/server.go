@@ -64,6 +64,7 @@ type Server struct {
 	MaxPlayers     int        `gorm:"column:max_players;default:70" json:"max_players"`
 	LastPing       *time.Time `gorm:"column:last_ping" json:"last_ping"`
 	Details        JSONMap    `gorm:"column:details;type:json" json:"details,omitempty"`
+	DetailsI18n    JSONMap    `gorm:"column:details_i18n;type:json" json:"details_i18n,omitempty"`
 }
 
 func (Server) TableName() string {

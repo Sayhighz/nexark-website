@@ -15,10 +15,12 @@ import { useServers } from '../hooks/useServers';
 import Loading from '../components/common/Loading';
 import ErrorMessage from '../components/common/ErrorMessage';
 import { SpotlightCard } from '../components/ui/SpotlightCard';
+import { useTranslation } from 'react-i18next';
 
 const { Title, Paragraph } = Typography;
 
 const Dashboard = () => {
+  const { t } = useTranslation();
   const { user } = useAuthContext();
   const { balance, getBalance, loading: creditsLoading, error: creditsError } = useCredits();
   const { servers, getServers, loading: serversLoading } = useServers();
@@ -77,10 +79,10 @@ const Dashboard = () => {
           <div className="relative z-20 h-full flex items-center justify-center">
             <div className="text-center px-4">
               <h1 className="text-5xl font-bold mb-4 text-white">
-                Welcome back, {user?.display_name || user?.username}! 🚀
+                {t('dashboard.welcomeBack', { name: user?.display_name || user?.username })}
               </h1>
               <p className="text-xl text-gray-200 max-w-2xl mx-auto leading-relaxed">
-                Ready to explore ARK Survival Evolved servers?
+                {t('dashboard.ready')}
               </p>
             </div>
           </div>
@@ -105,7 +107,7 @@ const Dashboard = () => {
                   <div>
                     <div className="flex items-center gap-2 mb-2">
                       <WalletOutlined className="text-green-400 text-xl" />
-                      <h3 className="text-lg font-semibold text-white">Credits</h3>
+                      <h3 className="text-lg font-semibold text-white">{t('dashboard.cards.credits')}</h3>
                     </div>
                     <p className="text-3xl font-bold text-green-400">
                       {balance?.balance || 0}
@@ -131,12 +133,12 @@ const Dashboard = () => {
                   <div>
                     <div className="flex items-center gap-2 mb-2">
                       <DesktopOutlined className="text-blue-400 text-xl" />
-                      <h3 className="text-lg font-semibold text-white">Servers</h3>
+                      <h3 className="text-lg font-semibold text-white">{t('dashboard.cards.servers')}</h3>
                     </div>
                     <p className="text-3xl font-bold text-blue-400">
                       {stats.totalServers}
                     </p>
-                    <p className="text-sm text-gray-400">({stats.onlineServers} online)</p>
+                    <p className="text-sm text-gray-400">{t('dashboard.cards.online', { count: stats.onlineServers })}</p>
                   </div>
                 </div>
               </div>
@@ -155,33 +157,33 @@ const Dashboard = () => {
               <div className="absolute inset-px rounded-[calc(theme(borderRadius.xl)-1px)] bg-zinc-800/50"></div>
               <div className="absolute inset-0 bg-[radial-gradient(40%_128px_at_50%_0%,theme(backgroundColor.white/5%),transparent)]"></div>
               <div className="relative">
-                <h3 className="text-2xl font-bold text-white mb-6">Quick Actions</h3>
+                <h3 className="text-2xl font-bold text-white mb-6">{t('dashboard.quickActions')}</h3>
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                   <Link to="/servers">
                     <div className="bg-blue-600/20 hover:bg-blue-600/30 border border-blue-600/30 rounded-lg p-4 text-center transition-all cursor-pointer">
                       <DesktopOutlined className="text-3xl text-blue-400 mb-2 block" />
-                      <div className="font-medium text-blue-300">Browse Servers</div>
+                      <div className="font-medium text-blue-300">{t('dashboard.actions.browseServers')}</div>
                     </div>
                   </Link>
 
                   <Link to="/shop">
                     <div className="bg-purple-600/20 hover:bg-purple-600/30 border border-purple-600/30 rounded-lg p-4 text-center transition-all cursor-pointer">
                       <ShoppingOutlined className="text-3xl text-purple-400 mb-2 block" />
-                      <div className="font-medium text-purple-300">Shop Items</div>
+                      <div className="font-medium text-purple-300">{t('dashboard.actions.shopItems')}</div>
                     </div>
                   </Link>
 
                   <Link to="/games">
                     <div className="bg-green-600/20 hover:bg-green-600/30 border border-green-600/30 rounded-lg p-4 text-center transition-all cursor-pointer">
                       <PlayCircleOutlined className="text-3xl text-green-400 mb-2 block" />
-                      <div className="font-medium text-green-300">Play Games</div>
+                      <div className="font-medium text-green-300">{t('dashboard.actions.playGames')}</div>
                     </div>
                   </Link>
 
                   <Link to="/credits">
                     <div className="bg-yellow-600/20 hover:bg-yellow-600/30 border border-yellow-600/30 rounded-lg p-4 text-center transition-all cursor-pointer">
                       <DollarOutlined className="text-3xl text-yellow-400 mb-2 block" />
-                      <div className="font-medium text-yellow-300">Top Up Credits</div>
+                      <div className="font-medium text-yellow-300">{t('dashboard.actions.topUpCredits')}</div>
                     </div>
                   </Link>
                 </div>
@@ -199,13 +201,13 @@ const Dashboard = () => {
             <div className="absolute inset-px rounded-[calc(theme(borderRadius.xl)-1px)] bg-zinc-800/50"></div>
             <div className="absolute inset-0 bg-[radial-gradient(40%_128px_at_50%_0%,theme(backgroundColor.white/5%),transparent)]"></div>
             <div className="relative">
-              <h3 className="text-2xl font-bold text-white mb-6">Recent Activity</h3>
+              <h3 className="text-2xl font-bold text-white mb-6">{t('dashboard.recentActivity')}</h3>
               <div className="bg-gray-800/30 rounded-lg p-4 border border-gray-700">
                 <div className="flex items-center space-x-3">
                   <TrophyOutlined className="text-2xl text-blue-400" />
                   <div>
-                    <div className="font-medium text-white">Welcome to NexARK!</div>
-                    <div className="text-sm text-gray-400">Start exploring our ARK servers</div>
+                    <div className="font-medium text-white">{t('dashboard.activityWelcomeTitle')}</div>
+                    <div className="text-sm text-gray-400">{t('dashboard.activityWelcomeDesc')}</div>
                   </div>
                 </div>
               </div>

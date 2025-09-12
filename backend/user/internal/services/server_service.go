@@ -45,7 +45,7 @@ func (s *ServerService) GetServers(ctx context.Context) ([]models.Server, error)
 func (s *ServerService) GetServerByID(ctx context.Context, serverID uint) (*models.Server, error) {
 	var server models.Server
 	err := s.db.Where("server_id = ?", serverID).
-		Select("server_id, server_name, server_type, ip_address, port, rcon_port, rcon_password, is_online, current_players, max_players, last_ping, details").
+		Select("server_id, server_name, server_type, ip_address, port, rcon_port, rcon_password, is_online, current_players, max_players, last_ping, details, details_i18n").
 		First(&server).Error
 	if err != nil {
 		if err == gorm.ErrRecordNotFound {

@@ -5,6 +5,7 @@ import Loading from '../components/common/Loading';
 import ErrorMessage from '../components/common/ErrorMessage';
 import StarBackground from '../components/site/StarBackground';
 import Navbar from '../components/site/Navbar';
+import { useTranslation } from 'react-i18next';
 import { ServerHero, ServerTabs, ServerSectionContent } from '../components/server/ServerDetailsParts';
 import {
   Layout,
@@ -41,6 +42,7 @@ const { Content, Sider } = Layout;
 const { Title, Text, Paragraph } = Typography;
 
 const ServerDetails = () => {
+  const { t, i18n } = useTranslation();
   const { serverId } = useParams();
   const location = useLocation();
   const { getServerByID, loading, error } = useServers();
@@ -53,37 +55,37 @@ const ServerDetails = () => {
     {
       key: 'settings',
       icon: <SettingOutlined />,
-      label: 'Settings'
+      label: t('server.sections.settings')
     },
     {
       key: 'structures',
       icon: <DatabaseOutlined />,
-      label: 'Structures'
+      label: t('server.sections.structures')
     },
     {
       key: 'dinos',
       icon: <BugOutlined />,
-      label: 'Dinos'
+      label: t('server.sections.dinos')
     },
     {
       key: 'items',
       icon: <GiftOutlined />,
-      label: 'Items'
+      label: t('server.sections.items')
     },
     {
       key: 'environment',
       icon: <EnvironmentOutlined />,
-      label: 'Environment'
+      label: t('server.sections.environment')
     },
     {
       key: 'commands',
       icon: <CodeOutlined />,
-      label: 'Commands'
+      label: t('server.sections.commands')
     },
     {
       key: 'rules',
       icon: <BookOutlined />,
-      label: 'Server Rules'
+      label: t('server.sections.rules')
     }
   ];
 
@@ -117,7 +119,8 @@ const ServerDetails = () => {
       try {
         setSectionLoading(true);
         const serverData = await getServerByID(serverId);
-        console.log(serverData)
+        console.log('Server Data:', serverData);
+        console.log('Rules Data:', serverData?.details?.rules);
         setServer(serverData);
 
         const d = {
@@ -149,7 +152,8 @@ const ServerDetails = () => {
     if (serverId) {
       fetchServerData();
     }
-  }, [serverId, getServerByID]);
+    // Re-fetch when language changes to pull localized details from backend
+  }, [serverId, getServerByID, i18n.language]);
 
   if (loading || sectionLoading) {
     return (
@@ -175,7 +179,7 @@ const ServerDetails = () => {
       <StarBackground />
       
       {/* Hero */}
-      <ServerHero title={`Setting ${server?.server_name || 'NEXArk'}`} />
+      <ServerHero title={`${t('server.sections.settings')} ${server?.server_name || 'NEXArk'}`} />
   
       {/* Navigation and Content */}
       <div className="relative z-20">

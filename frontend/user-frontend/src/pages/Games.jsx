@@ -3,9 +3,11 @@ import { useAuthContext } from '../contexts/AuthContext';
 import Loading from '../components/common/Loading';
 import ErrorMessage from '../components/common/ErrorMessage';
 import SpotlightButton from '../components/ui/SpotlightButton';
+import { useTranslation } from 'react-i18next';
 
 const Games = () => {
   const { isAuthenticated, login } = useAuthContext();
+  const { t } = useTranslation();
 
   const [spinWheelData, setSpinWheelData] = useState(null);
   const [dailyRewardData, setDailyRewardData] = useState(null);
@@ -106,8 +108,8 @@ const Games = () => {
     <div className="space-y-6">
       {/* Header */}
       <div className="text-center">
-        <h1 className="text-3xl font-bold text-gray-900 mb-2">Games & Rewards</h1>
-        <p className="text-gray-600">Earn credits and have fun with our gamification features</p>
+        <h1 className="text-3xl font-bold text-gray-900 mb-2">{t('games.title')}</h1>
+        <p className="text-gray-600">{t('games.subtitle')}</p>
       </div>
 
       {/* Error Message */}
@@ -119,9 +121,9 @@ const Games = () => {
         {/* Spin Wheel */}
         <div className="card">
           <div className="text-center">
-            <h2 className="text-2xl font-semibold mb-4">🎡 Spin Wheel</h2>
+            <h2 className="text-2xl font-semibold mb-4">{t('games.spinWheel')}</h2>
             <p className="text-gray-600 mb-6">
-              Spin the wheel to win credits! Available once every 24 hours.
+              {t('games.spinDesc')}
             </p>
 
             {/* Wheel Visualization */}
@@ -131,7 +133,7 @@ const Games = () => {
               }`}>
                 <div className="text-center">
                   <div className="text-4xl mb-2">🎯</div>
-                  <div className="text-sm text-gray-600">Spin to Win!</div>
+                  <div className="text-sm text-gray-600">{t('games.spinCenter')}</div>
                 </div>
               </div>
             </div>
@@ -153,12 +155,12 @@ const Games = () => {
               size="lg"
               className="w-full"
             >
-              {isSpinning ? 'Spinning...' : spinWheelData?.can_spin ? 'Spin the Wheel!' : 'Come back tomorrow'}
+              {isSpinning ? t('games.spinning') : spinWheelData?.can_spin ? t('games.spin') : t('games.comeBackTomorrow')}
             </SpotlightButton>
 
             {!spinWheelData?.can_spin && spinWheelData?.next_spin_time && (
               <p className="text-sm text-gray-500 mt-2">
-                Next spin available: {new Date(spinWheelData.next_spin_time).toLocaleString()}
+                {t('games.nextSpin', { time: new Date(spinWheelData.next_spin_time).toLocaleString() })}
               </p>
             )}
           </div>
@@ -167,19 +169,19 @@ const Games = () => {
         {/* Daily Rewards */}
         <div className="card">
           <div className="text-center">
-            <h2 className="text-2xl font-semibold mb-4">📅 Daily Rewards</h2>
+            <h2 className="text-2xl font-semibold mb-4">{t('games.dailyRewards')}</h2>
             <p className="text-gray-600 mb-6">
-              Claim your daily reward to maintain your streak!
+              {t('games.dailyDesc')}
             </p>
 
             {/* Streak Display */}
             <div className="bg-yellow-50 p-4 rounded-lg mb-6">
               <div className="text-2xl mb-2">🔥</div>
               <div className="text-xl font-bold text-yellow-700">
-                {dailyRewardData?.streak || 0} Day Streak
+                {t('games.streak', { count: dailyRewardData?.streak || 0 })}
               </div>
               <div className="text-sm text-yellow-600">
-                Keep it up for bigger rewards!
+                {t('games.keepItUp')}
               </div>
             </div>
 
@@ -187,7 +189,7 @@ const Games = () => {
             {dailyRewardData?.reward && (
               <div className="bg-green-50 p-4 rounded-lg mb-6">
                 <div className="text-lg font-semibold text-green-700 mb-2">
-                  Today's Reward
+                  {t('games.todaysReward')}
                 </div>
                 <div className="text-2xl font-bold text-green-600">
                   {dailyRewardData.reward.amount} {dailyRewardData.reward.type}
@@ -203,12 +205,12 @@ const Games = () => {
               size="lg"
               className="w-full bg-green-600 hover:bg-green-700 border-green-600"
             >
-              {loading ? 'Claiming...' : dailyRewardData?.can_claim ? 'Claim Daily Reward' : 'Already claimed today'}
+              {loading ? t('games.claiming') : dailyRewardData?.can_claim ? t('games.claim') : t('games.alreadyClaimed')}
             </SpotlightButton>
 
             {!dailyRewardData?.can_claim && (
               <p className="text-sm text-gray-500 mt-2">
-                Come back tomorrow for your next reward!
+                {t('games.comeBackTomorrow')}
               </p>
             )}
           </div>
@@ -218,23 +220,23 @@ const Games = () => {
       {/* Game Rules */}
       <div className="card bg-blue-50">
         <h3 className="text-lg font-semibold text-blue-900 mb-2">
-          🎮 Game Rules
+          {t('games.rules.title')}
         </h3>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm text-blue-800">
           <div>
-            <h4 className="font-medium">Spin Wheel:</h4>
+            <h4 className="font-medium">{t('games.rules.spinWheel')}</h4>
             <ul className="list-disc list-inside space-y-1">
-              <li>Spin once every 24 hours</li>
-              <li>Chance to win credits</li>
-              <li>Higher stakes, higher rewards</li>
+              <li>{t('games.rules.spinRules.0')}</li>
+              <li>{t('games.rules.spinRules.1')}</li>
+              <li>{t('games.rules.spinRules.2')}</li>
             </ul>
           </div>
           <div>
-            <h4 className="font-medium">Daily Rewards:</h4>
+            <h4 className="font-medium">{t('games.rules.dailyRewards')}</h4>
             <ul className="list-disc list-inside space-y-1">
-              <li>Claim once per day</li>
-              <li>Build your streak for bonuses</li>
-              <li>Never miss a day!</li>
+              <li>{t('games.rules.dailyRules.0')}</li>
+              <li>{t('games.rules.dailyRules.1')}</li>
+              <li>{t('games.rules.dailyRules.2')}</li>
             </ul>
     </div>
   </div>

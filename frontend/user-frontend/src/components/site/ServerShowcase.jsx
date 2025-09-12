@@ -3,10 +3,12 @@ import { Link } from 'react-router-dom';
 import { Card, Button, Typography } from 'antd';
 import { RocketOutlined, DesktopOutlined } from '@ant-design/icons';
 import { animate } from 'animejs';
+import { useTranslation } from 'react-i18next';
 
 const { Title, Paragraph, Text } = Typography;
 
 const RateCard = ({ title, icon, rates, to, variant = 'x25' }) => {
+  const { t } = useTranslation();
   const gradient =
     variant === 'x25'
       ? 'from-blue-900/40 to-blue-800/40 border-blue-500/40 hover:border-blue-400/60'
@@ -39,13 +41,14 @@ const RateCard = ({ title, icon, rates, to, variant = 'x25' }) => {
         icon={<RocketOutlined />}
         className={`w-full bg-gradient-to-r ${btnGradient} border-none py-4 h-auto text-lg font-semibold`}
       >
-        <Link to={to}>Enter {title}</Link>
+        <Link to={to}>{t('serverShowcase.enter', { title })}</Link>
       </Button>
     </Card>
   );
 };
 
 const ServerShowcase = () => {
+  const { t } = useTranslation();
   const containerRef = useRef(null);
 
   useEffect(() => {
@@ -60,17 +63,17 @@ const ServerShowcase = () => {
   }, []);
 
   const rates25 = [
-    { label: 'Taming', value: '25x' },
-    { label: 'Harvest', value: '25x' },
-    { label: 'Breeding', value: '25x' },
-    { label: 'XP', value: '25x' },
+    { label: t('serverShowcase.rateLabels.taming'), value: '25x' },
+    { label: t('serverShowcase.rateLabels.harvest'), value: '25x' },
+    { label: t('serverShowcase.rateLabels.breeding'), value: '25x' },
+    { label: t('serverShowcase.rateLabels.xp'), value: '25x' },
   ];
 
   const rates100 = [
-    { label: 'Taming', value: '100x' },
-    { label: 'Harvest', value: '100x' },
-    { label: 'Breeding', value: '100x' },
-    { label: 'XP', value: '100x' },
+    { label: t('serverShowcase.rateLabels.taming'), value: '100x' },
+    { label: t('serverShowcase.rateLabels.harvest'), value: '100x' },
+    { label: t('serverShowcase.rateLabels.breeding'), value: '100x' },
+    { label: t('serverShowcase.rateLabels.xp'), value: '100x' },
   ];
 
   return (
@@ -78,24 +81,24 @@ const ServerShowcase = () => {
       <div className="text-center mb-12">
         <Title level={2} className="text-white text-4xl md:text-5xl font-bold mb-4">
           <span className="bg-gradient-to-r from-blue-400 to-blue-600 bg-clip-text text-transparent">
-            Choose Your Galaxy
+            {t('serverShowcase.title')}
           </span>
         </Title>
         <Paragraph className="text-xl text-gray-300">
-          Select a server realm and start your adventure
+          {t('serverShowcase.subtitle')}
         </Paragraph>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
         <RateCard
-          title="X25 Galaxy"
+          title={t('serverShowcase.x25Title')}
           icon={<span role="img" aria-label="earth">🌍</span>}
           rates={rates25}
           to="/servers/x25"
           variant="x25"
         />
         <RateCard
-          title="X100 Nebula"
+          title={t('serverShowcase.x100Title')}
           icon={<span role="img" aria-label="nebula">🌌</span>}
           rates={rates100}
           to="/servers/x100"
@@ -109,7 +112,7 @@ const ServerShowcase = () => {
           icon={<DesktopOutlined />}
           className="border-white/30 text-white hover:bg-white/10 hover:border-white/50 px-8 py-4 h-auto text-lg font-medium backdrop-blur-sm"
         >
-          <Link to="/servers">Explore all servers</Link>
+          <Link to="/servers">{t('serverShowcase.exploreAll')}</Link>
         </Button>
       </div>
     </section>

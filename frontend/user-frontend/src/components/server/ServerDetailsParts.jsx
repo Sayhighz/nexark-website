@@ -5,6 +5,7 @@ import { Navigation } from '../ui/Navigation';
 import { SpotlightCard } from '../ui/SpotlightCard';
 import { GridPattern } from '../ui/GridPattern';
 import { Sparkles } from '../ui/Sparkles';
+import { useTranslation } from 'react-i18next';
 
 const { Title, Text, Paragraph } = Typography;
 
@@ -13,6 +14,15 @@ const { Title, Text, Paragraph } = Typography;
  * Encapsulates the header title, description and sparkles background band.
  */
 export const ServerHero = ({ title = 'Setting NEXArk x25' }) => {
+  const { i18n } = useTranslation();
+  const isTH = (i18n?.language || '').toLowerCase().startsWith('th');
+  const subtitle = isTH
+    ? 'เซิฟเวอร์ NEXArk x25 ที่มาพร้อมกับการปรับแต่งและตั้งค่าพิเศษมากมาย'
+    : 'NEXArk x25 servers packed with extensive custom tuning and special settings';
+  const description = isTH
+    ? 'รายละเอียดการตั้งค่าทั้งหมดสำหรับการเล่นที่สมบูรณ์แบบ'
+    : 'Complete configuration details for a perfect gameplay experience';
+
   return (
     <>
       {/* Text header */}
@@ -22,10 +32,10 @@ export const ServerHero = ({ title = 'Setting NEXArk x25' }) => {
             {title}
           </Title>
           <Paragraph style={{ color: '#d1d5db', fontSize: '1.25rem', maxWidth: '672px', margin: '0 auto' }}>
-            เซิฟเวอร์ NEXArk x25 ที่มาพร้อมกับการปรับแต่งและตั้งค่าพิเศษมากมาย
+            {subtitle}
           </Paragraph>
           <Paragraph strong style={{ color: '#d1d5db', fontSize: '1.25rem', marginTop: '0.5rem' }}>
-            รายละเอียดการตั้งค่าทั้งหมดสำหรับการเล่นที่สมบูรณ์แบบ
+            {description}
           </Paragraph>
         </div>
       </div>
@@ -132,6 +142,13 @@ export const ServerTabs = ({ menuItems, setActiveTab, activeTab }) => {
  */
 export const ServerSectionContent = ({ activeTab, displayInfos, menuItems }) => {
   const data = displayInfos?.[activeTab];
+  
+  // Debug logging for rules
+  if (activeTab === 'rules') {
+    console.log('Rules activeTab:', activeTab);
+    console.log('Rules data:', data);
+    console.log('displayInfos:', displayInfos);
+  }
 
   if (!data) {
     return (

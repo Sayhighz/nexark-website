@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { Alert } from 'antd';
 import { useAuthContext } from '../contexts/AuthContext';
 import Loading from '../components/common/Loading';
+import { useTranslation } from 'react-i18next';
 
 function parseQuery(search) {
   const params = new URLSearchParams(search);
@@ -14,6 +15,7 @@ function parseQuery(search) {
 }
 
 const AuthCallback = () => {
+  const { t } = useTranslation();
   const { handleCallback } = useAuthContext();
   const navigate = useNavigate();
   const [error, setError] = useState(null);
@@ -27,7 +29,7 @@ const AuthCallback = () => {
         await handleCallback(query);
         navigate('/servers', { replace: true });
       } catch (err) {
-        setError(err?.response?.data?.error?.message || 'Authentication failed');
+        setError(err?.response?.data?.error?.message || t('authCallback.authFailedFallback'));
       }
     };
     run();
@@ -52,7 +54,7 @@ const AuthCallback = () => {
       <div className="relative z-10 w-full max-w-md text-center">
         {!error ? (
           <div className="bg-white/5 backdrop-blur-sm border border-white/10 rounded-xl p-8">
-            <Loading size="lg" message="กำลังเข้าสู่ระบบด้วย Steam..." />
+            <Loading size="lg" message={t('authCallback.signingIn')} />
           </div>
         ) : (
           <div className="bg-red-900/20 backdrop-blur-sm border border-red-500/30 rounded-xl p-6">
@@ -62,7 +64,7 @@ const AuthCallback = () => {
               </svg>
             </div>
             <h3 className="text-lg font-semibold text-red-300 mb-2" style={{ fontFamily: 'SukhumvitSet' }}>
-              การเข้าสู่ระบบล้มเหลว
+              {t('authCallback.failedTitle')}
             </h3>
             <p className="text-red-200 text-sm" style={{ fontFamily: 'SukhumvitSet' }}>
               {error}
@@ -72,7 +74,7 @@ const AuthCallback = () => {
               className="mt-4 px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg text-sm font-medium transition-colors duration-200"
               style={{ fontFamily: 'SukhumvitSet' }}
             >
-              กลับหน้าหลัก
+              {t('authCallback.backHome')}
             </button>
           </div>
         )}

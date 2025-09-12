@@ -7,10 +7,10 @@ import VideoBackground from '../components/site/VideoBackground';
 import StarBackground from '../components/site/StarBackground';
 import ServerModesSection from '../components/site/ServerModesSection';
 import { Sparkles } from '../components/ui/Sparkles';
+import { useTranslation } from 'react-i18next';
 
 const Home = () => {
-
-
+  const { t } = useTranslation();
 
   return (
     <>
@@ -51,12 +51,12 @@ const Home = () => {
               pauseOnHover={true}
               className="text-white font-english-bold text-2xl"
             >
-              <span className="mx-12">EPIC PVP BATTLES AWAIT - JOIN THE ULTIMATE COMBAT EXPERIENCE</span>
-              <span className="mx-12">COMPETE AGAINST THE BEST - CLIMB THE LEADERBOARDS</span>
-              <span className="mx-12">MASTER YOUR SKILLS - BECOME A PVP LEGEND</span>
-              <span className="mx-12">FAST-PACED ACTION - NON-STOP ADRENALINE RUSH</span>
-              <span className="mx-12">DOMINATE THE BATTLEFIELD - PROVE YOUR WORTH</span>
-              <span className="mx-12">INTENSE PVP MODES - X25 & X100 SERVERS</span>
+              <span className="mx-12">{t('home.marquee.line1')}</span>
+              <span className="mx-12">{t('home.marquee.line2')}</span>
+              <span className="mx-12">{t('home.marquee.line3')}</span>
+              <span className="mx-12">{t('home.marquee.line4')}</span>
+              <span className="mx-12">{t('home.marquee.line5')}</span>
+              <span className="mx-12">{t('home.marquee.line6')}</span>
             </Marquee>
           </div>
 
@@ -68,12 +68,12 @@ const Home = () => {
               direction="right"
               className="text-white font-english-bold text-2xl"
             >
-              <span className="mx-12">BUILD YOUR EMPIRE - CRAFT, SURVIVE, CONQUER</span>
-              <span className="mx-12">EXPLORE VAST WORLDS - DISCOVER HIDDEN TREASURES</span>
-              <span className="mx-12">TEAM UP WITH FRIENDS - CREATE LASTING ALLIANCES</span>
-              <span className="mx-12">CUSTOMIZE YOUR BASE - DEFEND YOUR TERRITORY</span>
-              <span className="mx-12">EVOLVE YOUR STRATEGY - ADAPT AND OVERCOME</span>
-              <span className="mx-12">NEXARK AWAITS - YOUR ADVENTURE BEGINS NOW</span>
+              <span className="mx-12">{t('home.marquee.r1')}</span>
+              <span className="mx-12">{t('home.marquee.r2')}</span>
+              <span className="mx-12">{t('home.marquee.r3')}</span>
+              <span className="mx-12">{t('home.marquee.r4')}</span>
+              <span className="mx-12">{t('home.marquee.r5')}</span>
+              <span className="mx-12">{t('home.marquee.r6')}</span>
             </Marquee>
           </div>
 

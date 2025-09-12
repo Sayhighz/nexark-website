@@ -8,6 +8,7 @@ import ErrorMessage from '../components/common/ErrorMessage';
 import GiftModal from '../components/GiftModal';
 import { Sparkles } from '../components/ui/Sparkles';
 import { message, Modal, notification } from 'antd';
+import { useTranslation } from 'react-i18next';
 import {
   ShoppingCartOutlined,
   GiftOutlined,
@@ -27,6 +28,7 @@ const ItemDetails = () => {
   const [giftLoading, setGiftLoading] = useState(false);
   const [buyLoading, setBuyLoading] = useState(false);
   const [modal, modalContextHolder] = Modal.useModal();
+  const { t, i18n } = useTranslation();
 
   useEffect(() => {
     const fetchItem = async () => {
@@ -45,7 +47,7 @@ const ItemDetails = () => {
     if (itemId) {
       fetchItem();
     }
-  }, [itemId, getItemByID]);
+  }, [itemId, getItemByID, i18n.language]);
 
   const getRarityColor = (rarity) => {
     switch (rarity) {
@@ -70,8 +72,8 @@ const ItemDetails = () => {
     const run = () => {
       try {
         notification.warning({
-          message: 'เครดิตไม่เพียงพอ',
-          description: 'กรุณาเติมเครดิตก่อนทำการซื้อไอเทม',
+          message: t('item.errors.insufficientCreditsTitle'),
+          description: t('item.errors.insufficientCreditsDesc'),
           placement: 'topRight',
         });
       } catch {
@@ -88,7 +90,7 @@ const ItemDetails = () => {
   const handleBuyItem = async () => {
     // Check if user is authenticated
     if (!isAuthenticated) {
-      message.warning('กรุณาเข้าสู่ระบบก่อนทำการซื้อ');
+      message.warning(t('item.errors.loginRequiredBuy'));
       login();
       return;
     }
@@ -97,10 +99,10 @@ const ItemDetails = () => {
     const priceText = typeof item.price === 'number' ? item.price.toLocaleString() : item.price;
 
     modal.confirm({
-      title: 'ยืนยันการซื้อ',
-      content: `คุณต้องการซื้อ ${itemName} ราคา ฿${priceText} ใช่หรือไม่?`,
-      okText: 'ยืนยัน',
-      cancelText: 'ยกเลิก',
+      title: t('item.confirm.title'),
+      content: t('item.confirm.content', { item: itemName, currency: t('common.currencySymbol'), price: priceText }),
+      okText: t('item.confirm.ok'),
+      cancelText: t('item.confirm.cancel'),
       centered: true,
       onOk: async () => {
         try {
@@ -130,7 +132,7 @@ const ItemDetails = () => {
                 errorMessage = 'ไอเทมนี้หมดสต๊อกแล้ว';
               }
               notification.error({
-                message: 'ซื้อไม่สำเร็จ',
+                message: t('item.errors.genericTitle'),
                 description: errorMessage,
                 placement: 'topRight',
               });
@@ -176,12 +178,12 @@ const ItemDetails = () => {
           }
 
           Modal.success({
-            title: 'สั่งซื้อสำเร็จ',
-            content: `ซื้อ ${itemName} เรียบร้อย ไอเทมจะถูกส่งไปยังเซิร์ฟเวอร์`,
+            title: t('item.purchase.successTitle'),
+            content: t('item.purchase.successModal', { item: itemName }),
           });
           notification.success({
-            message: 'สั่งซื้อสำเร็จ',
-            description: `ซื้อ ${itemName} สำเร็จ`,
+            message: t('item.purchase.successTitle'),
+            description: t('item.purchase.successDesc', { item: itemName }),
             placement: 'topRight',
           });
         } catch (error) {
@@ -189,7 +191,7 @@ const ItemDetails = () => {
 
           // กรณีไม่ได้ล็อกอิน
           if (error.response?.status === 401) {
-            message.error('กรุณาเข้าสู่ระบบก่อนทำการซื้อ');
+            message.error(t('item.errors.loginRequiredBuy'));
             login();
             return;
           }
@@ -212,19 +214,19 @@ const ItemDetails = () => {
             showInsufficientCredits(errorMessage);
           } else if (errorCode === 'OUT_OF_STOCK') {
             notification.error({
-              message: 'ซื้อไม่สำเร็จ',
-              description: 'ไอเทมนี้หมดสต๊อกแล้ว',
+              message: t('item.errors.outOfStockTitle'),
+              description: t('item.errors.outOfStockDesc'),
               placement: 'topRight',
             });
           } else if (errorCode === 'ITEM_NOT_FOUND') {
             notification.error({
-              message: 'ซื้อไม่สำเร็จ',
-              description: 'ไม่พบไอเทมนี้',
+              message: t('item.errors.notFoundTitle'),
+              description: t('item.errors.notFoundDesc'),
               placement: 'topRight',
             });
           } else {
             notification.error({
-              message: 'ซื้อไม่สำเร็จ',
+              message: t('item.errors.genericTitle'),
               description: errorMessage,
               placement: 'topRight',
             });
@@ -239,7 +241,7 @@ const ItemDetails = () => {
   const handleGiftItem = () => {
     // Check if user is authenticated
     if (!isAuthenticated) {
-      message.warning('กรุณาเข้าสู่ระบบก่อนส่งของขวัญ');
+      message.warning(t('item.errors.loginRequiredGift'));
       login();
       return;
     }
@@ -285,7 +287,7 @@ const ItemDetails = () => {
         return;
       }
 
-      message.success(`ส่งของขวัญ ${itemName} ให้ SteamID: ${recipientSteamId} สำเร็จ!`);
+      message.success(t('item.errors.giftSuccess', { item: itemName, steamId: recipientSteamId }));
       setGiftModalVisible(false);
       setSelectedItemForGift(null);
     } catch (error) {
@@ -293,7 +295,7 @@ const ItemDetails = () => {
       
       // Handle specific authentication errors
       if (error.response?.status === 401) {
-        message.error('กรุณาเข้าสู่ระบบก่อนส่งของขวัญ');
+        message.error(t('item.errors.loginRequiredGift'));
         login();
         setGiftModalVisible(false);
         setSelectedItemForGift(null);
@@ -359,7 +361,7 @@ const ItemDetails = () => {
               className="px-4 py-2 bg-white/10 hover:bg-white/20 text-white border border-white/20 rounded-lg text-sm font-medium transition-all duration-200 backdrop-blur-sm"
               style={{ fontFamily: 'SukhumvitSet' }}
             >
-              กลับไปร้านค้า
+              {t('item.backToShop')}
             </button>
           </div>
         </div>
@@ -373,14 +375,14 @@ const ItemDetails = () => {
         <div className="relative z-20 pt-20">
           <div className="text-center">
             <h2 className="text-2xl font-bold text-white mb-4" style={{ fontFamily: 'SukhumvitSet' }}>
-              ไม่พบไอเทม
+              {t('shop.empty.title')}
             </h2>
             <button
               onClick={handleBackToShop}
               className="px-4 py-2 bg-white/10 hover:bg-white/20 text-white border border-white/20 rounded-lg text-sm font-medium transition-all duration-200 backdrop-blur-sm"
               style={{ fontFamily: 'SukhumvitSet' }}
             >
-              กลับไปร้านค้า
+              {t('item.backToShop')}
             </button>
           </div>
         </div>
@@ -400,10 +402,10 @@ const ItemDetails = () => {
             className="absolute left-4 top-0 px-3 py-1.5 bg-white/10 hover:bg-white/20 text-white border border-white/20 rounded-lg text-sm font-medium transition-all duration-200 backdrop-blur-sm"
             style={{ fontFamily: 'SukhumvitSet' }}
           >
-            ← กลับไปร้านค้า
+            {t('item.backToShop')}
           </button>
           <h1 className="text-4xl font-bold mb-4 text-white" style={{ fontFamily: 'SukhumvitSet' }}>
-            รายละเอียดไอเทม
+            {t('item.detailsTitle')}
           </h1>
         </div>
       </div>
@@ -454,7 +456,7 @@ const ItemDetails = () => {
                         style={{ fontFamily: 'SukhumvitSet' }}
                       >
                         <ShoppingCartOutlined />
-                        {buyLoading ? 'กำลังซื้อ...' : `ซื้อ - ฿${item.price ? item.price.toLocaleString() : '0'}`}
+                        {buyLoading ? t('item.buttons.buying') : t('item.buttons.buy', { currency: t('common.currencySymbol'), price: item.price ? item.price.toLocaleString() : '0' })}
                       </button>
                       <button
                         onClick={handleGiftItem}
@@ -462,7 +464,7 @@ const ItemDetails = () => {
                         style={{ fontFamily: 'SukhumvitSet' }}
                       >
                         <GiftOutlined />
-                        ส่งของขวัญ
+                        {t('item.buttons.gift')}
                       </button>
                     </>
                   ) : (
@@ -472,7 +474,7 @@ const ItemDetails = () => {
                       style={{ fontFamily: 'SukhumvitSet' }}
                     >
                       <LoginOutlined />
-                      เข้าสู่ระบบเพื่อซื้อ
+                      {t('item.buttons.loginToBuy')}
                     </button>
                   )}
                 </div>
@@ -488,7 +490,7 @@ const ItemDetails = () => {
                     </h2>
                     {(item.is_featured || item.featured) && (
                       <div className="bg-blue-600 text-white text-sm font-bold px-3 py-1 rounded-full flex items-center gap-1">
-                        <span>⭐</span>แนะนำ
+                        <span>⭐</span>{t('item.featured')}
                       </div>
                     )}
                   </div>
@@ -504,10 +506,10 @@ const ItemDetails = () => {
                 {/* Description */}
                 <div>
                   <h3 className="text-lg font-semibold text-white mb-2" style={{ fontFamily: 'SukhumvitSet' }}>
-                    คำอธิบาย
+                    {t('item.description')}
                   </h3>
                   <p className="text-gray-300 leading-relaxed" style={{ fontFamily: 'SukhumvitSet' }}>
-                    {item.description || 'ไม่มีคำอธิบายสำหรับไอเทมนี้'}
+                    {item.description || t('item.noDescription')}
                   </p>
                 </div>
 
@@ -515,7 +517,7 @@ const ItemDetails = () => {
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                   <div className="bg-zinc-800/50 p-3 rounded-lg">
                     <h4 className="text-sm font-medium text-gray-400 mb-1" style={{ fontFamily: 'SukhumvitSet' }}>
-                      หมวดหมู่
+                      {t('item.category')}
                     </h4>
                     <p className="text-white font-medium text-sm" style={{ fontFamily: 'SukhumvitSet' }}>
                       {item.category?.category_name || item.category?.name || 'ไม่ระบุ'}
@@ -524,10 +526,10 @@ const ItemDetails = () => {
 
                   <div className="bg-zinc-800/50 p-3 rounded-lg">
                     <h4 className="text-sm font-medium text-gray-400 mb-1" style={{ fontFamily: 'SukhumvitSet' }}>
-                      สถานะสต็อก
+                      {t('item.stockStatus')}
                     </h4>
                     <p className="text-white font-medium text-sm" style={{ fontFamily: 'SukhumvitSet' }}>
-                      {(item.stock_quantity || item.stock) === -1 ? 'มีสินค้าคงเหลือ' : `เหลือ ${item.stock_quantity || item.stock} ชิ้น`}
+                      {(item.stock_quantity || item.stock) === -1 ? t('item.inStock') : t('item.stockLeft', { count: item.stock_quantity || item.stock })}
                     </p>
                   </div>
                 </div>
@@ -536,12 +538,12 @@ const ItemDetails = () => {
                 {/* Additional Info */}
                 <div className="bg-blue-900/20 border border-blue-500/20 p-3 rounded-lg">
                   <h4 className="text-sm font-semibold text-blue-400 mb-2" style={{ fontFamily: 'SukhumvitSet' }}>
-                    💡 ข้อมูลเพิ่มเติม
+                    {t('item.additionalInfo.header')}
                   </h4>
                   <ul className="text-xs text-gray-300 space-y-1" style={{ fontFamily: 'SukhumvitSet' }}>
-                    <li>• การซื้อจะได้รับการประมวลผลทันที</li>
-                    <li>• ไอเทมจะถูกส่งตรงไปยังเซิร์ฟเวอร์ที่เลือก</li>
-                    <li>• ใช้เครดิตจากยอดเงินในบัญชีของคุณ</li>
+                    <li>• {t('item.additionalInfo.i1')}</li>
+                    <li>• {t('item.additionalInfo.i2')}</li>
+                    <li>• {t('item.additionalInfo.i3')}</li>
                   </ul>
                 </div>
               </div>

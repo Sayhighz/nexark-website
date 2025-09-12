@@ -1,7 +1,11 @@
 import React from 'react';
 import { Spin } from 'antd';
+import { useTranslation } from 'react-i18next';
 
-const Loading = ({ size = 'default', message = 'Loading...' }) => {
+const Loading = ({ size = 'default', message }) => {
+  const { t } = useTranslation();
+  const displayMessage = message || t('common.loading');
+
   const getSizeClass = () => {
     switch (size) {
       case 'small': return 'w-4 h-4';
@@ -33,12 +37,12 @@ const Loading = ({ size = 'default', message = 'Loading...' }) => {
         <Spin size={getSpinnerSize()} />
       </div>
       
-      {message && (
+      {displayMessage && (
         <div
           className="mt-4 text-white/80 text-center backdrop-blur-sm bg-white/5 px-4 py-2 rounded-lg border border-white/10"
           style={{ fontFamily: 'SukhumvitSet' }}
         >
-          {message}
+          {displayMessage}
         </div>
       )}
       

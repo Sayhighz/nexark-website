@@ -4,6 +4,7 @@ import { Link as ScrollLink } from 'react-scroll';
 import { useAuthContext } from '../../contexts/AuthContext';
 import SpotlightButton from '../ui/SpotlightButton';
 import { MagneticText } from '../MagneticText';
+import { useTranslation } from 'react-i18next';
 
 const Navbar = () => {
   const { isAuthenticated, login, user, logout } = useAuthContext();
@@ -12,6 +13,7 @@ const Navbar = () => {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const location = useLocation();
   const navigate = useNavigate();
+  const { t, i18n } = useTranslation();
 
   // Transparent at top, solid on scroll
   useEffect(() => {
@@ -52,7 +54,7 @@ const Navbar = () => {
 
   const serverSections = [
     {
-      name: 'Settings',
+      name: t('server.sections.settings'),
       id: 'settings',
       icon: (
         <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -62,7 +64,7 @@ const Navbar = () => {
       )
     },
     {
-      name: 'Structures',
+      name: t('server.sections.structures'),
       id: 'structures',
       icon: (
         <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -71,7 +73,7 @@ const Navbar = () => {
       )
     },
     {
-      name: 'Dinos',
+      name: t('server.sections.dinos'),
       id: 'dinos',
       icon: (
         <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -80,7 +82,7 @@ const Navbar = () => {
       )
     },
     {
-      name: 'Items',
+      name: t('server.sections.items'),
       id: 'items',
       icon: (
         <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -89,7 +91,7 @@ const Navbar = () => {
       )
     },
     {
-      name: 'Environment',
+      name: t('server.sections.environment'),
       id: 'environment',
       icon: (
         <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -99,7 +101,7 @@ const Navbar = () => {
       )
     },
     {
-      name: 'Commands',
+      name: t('server.sections.commands'),
       id: 'commands',
       icon: (
         <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -108,7 +110,7 @@ const Navbar = () => {
       )
     },
     {
-      name: 'Server Rules',
+      name: t('server.sections.rules'),
       id: 'server-rules',
       icon: (
         <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -132,7 +134,7 @@ const Navbar = () => {
             className="text-white hover:text-gray-300 transition-colors cursor-pointer"
           >
             <MagneticText
-              body="NEXARK"
+              body={t('common.brand')}
               as="div"
               className="text-2xl font-bold font-english-bold"
             >
@@ -218,7 +220,7 @@ const Navbar = () => {
                 onClick={() => toggleDropdown('store')}
                 className="flex items-center space-x-1 text-gray-300 hover:text-white transition-colors font-medium font-english-medium"
               >
-                <span>Store</span>
+                <span>{t('navbar.store')}</span>
                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
                 </svg>
@@ -231,25 +233,41 @@ const Navbar = () => {
                     onClick={() => setActiveDropdown(null)}
                     className="block px-4 py-3 text-gray-300 hover:text-white hover:bg-white/10 transition-colors"
                   >
-                    X25 Shop
+                    {`${t('navbar.x25')} ${t('navbar.store')}`}
                   </RouterLink>
                   <RouterLink
                     to="/shop?server=x100"
                     onClick={() => setActiveDropdown(null)}
                     className="block px-4 py-3 text-gray-300 hover:text-white hover:bg-white/10 transition-colors"
                   >
-                    X100 Shop
+                    {`${t('navbar.x100')} ${t('navbar.store')}`}
                   </RouterLink>
                   <RouterLink
                     to="/subscribe"
                     onClick={() => setActiveDropdown(null)}
                     className="block px-4 py-3 text-gray-300 hover:text-white hover:bg-white/10 transition-colors"
                   >
-                    Subscribe
+                    {t('navbar.subscribe')}
                   </RouterLink>
                 </div>
               )}
             </div>
+          </div>
+
+          {/* Language Switcher */}
+          <div className="hidden md:flex items-center space-x-2">
+            <button
+              onClick={() => i18n.changeLanguage('en')}
+              className={`text-xs px-2 py-1 rounded ${i18n.language?.startsWith('en') ? 'bg-white/20 text-white' : 'text-gray-300 hover:text-white hover:bg-white/10'}`}
+            >
+              EN
+            </button>
+            <button
+              onClick={() => i18n.changeLanguage('th')}
+              className={`text-xs px-2 py-1 rounded ${i18n.language?.startsWith('th') ? 'bg-white/20 text-white' : 'text-gray-300 hover:text-white hover:bg-white/10'}`}
+            >
+              TH
+            </button>
           </div>
 
           {/* Mobile Menu Button */}
@@ -291,7 +309,7 @@ const Navbar = () => {
                 {/* User Name and Credits */}
                 <div className="flex items-center space-x-1">
                   <span className="text-sm">{user?.display_name || user?.username || 'User'}</span>
-                  <span className="text-xs text-blue-400">฿{user?.credit_balance || 0}</span>
+                  <span className="text-xs text-blue-400">{t('common.currencySymbol')}{user?.credit_balance || 0}</span>
                 </div>
                 
                 {/* Dropdown Arrow */}
@@ -310,7 +328,7 @@ const Navbar = () => {
                     <svg className="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1" />
                     </svg>
-                    <span>เติมเครดิต</span>
+                    <span>{t('profile.topUp')}</span>
                   </RouterLink>
                   
                   <RouterLink
@@ -321,7 +339,7 @@ const Navbar = () => {
                     <svg className="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                     </svg>
-                    <span>ประวัติการเติมเงิน</span>
+                    <span>{t('profile.transactions')}</span>
                   </RouterLink>
                   
                   <div className="border-t border-white/10"></div>
@@ -336,7 +354,7 @@ const Navbar = () => {
                     <svg className="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
                     </svg>
-                    <span>ออกจากระบบ</span>
+                    <span>{t('auth.logout')}</span>
                   </button>
                 </div>
               )}
@@ -348,7 +366,7 @@ const Navbar = () => {
               size="md"
               className="rounded-full font-english-semibold cursor-pointer"
             >
-              Sign in
+              {t('auth.signIn')}
             </SpotlightButton>
           )}
         </div>
@@ -360,7 +378,7 @@ const Navbar = () => {
           <div className="px-6 py-4 space-y-4">
             {/* X25 Section */}
             <div>
-              <div className="text-white font-medium mb-2" style={{ fontFamily: 'SukhumvitSet' }}>X25 Server</div>
+              <div className="text-white font-medium mb-2" style={{ fontFamily: 'SukhumvitSet' }}>{t('navbar.x25Server')}</div>
               <div className="space-y-2 pl-4">
                 {serverSections.map((section) => (
                   <button
@@ -381,7 +399,7 @@ const Navbar = () => {
 
             {/* X100 Section */}
             <div>
-              <div className="text-white font-medium mb-2" style={{ fontFamily: 'SukhumvitSet' }}>X100 Server</div>
+              <div className="text-white font-medium mb-2" style={{ fontFamily: 'SukhumvitSet' }}>{t('navbar.x100Server')}</div>
               <div className="space-y-2 pl-4">
                 {serverSections.map((section) => (
                   <button
@@ -402,7 +420,7 @@ const Navbar = () => {
 
             {/* Store Section */}
             <div>
-              <div className="text-white font-medium mb-2" style={{ fontFamily: 'SukhumvitSet' }}>Store</div>
+              <div className="text-white font-medium mb-2" style={{ fontFamily: 'SukhumvitSet' }}>{t('navbar.store')}</div>
               <div className="space-y-2 pl-4">
                 <RouterLink
                   to="/shop?server=x25"
@@ -410,7 +428,7 @@ const Navbar = () => {
                   className="block text-gray-300 hover:text-white transition-colors py-2"
                   style={{ fontFamily: 'SukhumvitSet' }}
                 >
-                  X25 Shop
+                  {`${t('navbar.x25')} ${t('navbar.store')}`}
                 </RouterLink>
                 <RouterLink
                   to="/shop?server=x100"
@@ -418,7 +436,7 @@ const Navbar = () => {
                   className="block text-gray-300 hover:text-white transition-colors py-2"
                   style={{ fontFamily: 'SukhumvitSet' }}
                 >
-                  X100 Shop
+                  {`${t('navbar.x100')} ${t('navbar.store')}`}
                 </RouterLink>
                 <RouterLink
                   to="/subscribe"
@@ -426,7 +444,7 @@ const Navbar = () => {
                   className="block text-gray-300 hover:text-white transition-colors py-2"
                   style={{ fontFamily: 'SukhumvitSet' }}
                 >
-                  Subscribe
+                  {t('navbar.subscribe')}
                 </RouterLink>
               </div>
             </div>
@@ -434,7 +452,7 @@ const Navbar = () => {
             {/* Account Section for Mobile */}
             {isAuthenticated && (
               <div className="border-t border-white/10 pt-4">
-                <div className="text-white font-medium mb-2" style={{ fontFamily: 'SukhumvitSet' }}>Account</div>
+                <div className="text-white font-medium mb-2" style={{ fontFamily: 'SukhumvitSet' }}>{t('navbar.account')}</div>
                 <div className="space-y-2 pl-4">
                   <RouterLink
                     to="/account/credits"
@@ -442,7 +460,7 @@ const Navbar = () => {
                     className="block text-gray-300 hover:text-white transition-colors py-2"
                     style={{ fontFamily: 'SukhumvitSet' }}
                   >
-                    เติมเครดิต
+                    {t('profile.topUp')}
                   </RouterLink>
                   <RouterLink
                     to="/account/transactions"
@@ -450,7 +468,7 @@ const Navbar = () => {
                     className="block text-gray-300 hover:text-white transition-colors py-2"
                     style={{ fontFamily: 'SukhumvitSet' }}
                   >
-                    ประวัติการเติมเงิน
+                    {t('profile.transactions')}
                   </RouterLink>
                   <button
                     onClick={() => {
@@ -460,7 +478,7 @@ const Navbar = () => {
                     className="block text-gray-300 hover:text-white transition-colors py-2 w-full text-left"
                     style={{ fontFamily: 'SukhumvitSet' }}
                   >
-                    ออกจากระบบ
+                    {t('auth.logout')}
                   </button>
                 </div>
               </div>

@@ -34,6 +34,12 @@ func (h *ShopHandler) GetCategories(c *gin.Context) {
 		return
 	}
 
+	// Localize category names/descriptions
+	lang := getLangShop(c)
+	for i := range categories {
+		localizeCategory(&categories[i], lang)
+	}
+
 	c.JSON(http.StatusOK, gin.H{
 		"success": true,
 		"data": gin.H{
@@ -94,6 +100,12 @@ func (h *ShopHandler) GetItems(c *gin.Context) {
 		return
 	}
 
+	// Localize item/category fields
+	lang := getLangShop(c)
+	for i := range items {
+		localizeItem(&items[i], lang)
+	}
+
 	totalPages := (int(total) + limit - 1) / limit
 
 	c.JSON(http.StatusOK, gin.H{
@@ -146,6 +158,10 @@ func (h *ShopHandler) GetItemByID(c *gin.Context) {
 		})
 		return
 	}
+
+	// Localize item/category fields
+	lang := getLangShop(c)
+	localizeItem(item, lang)
 
 	c.JSON(http.StatusOK, gin.H{
 		"success": true,
@@ -376,4 +392,67 @@ func (h *ShopHandler) GiftItem(c *gin.Context) {
 		"success": true,
 		"message": "Item gifted successfully",
 	})
+}
+
+// Localization helpers for shop items/categories within handlers package
+
+func localizeCategory(cat *models.ItemCategory, lang string) {
+	if cat == nil {
+		return
+	}
+	if lang == "th" {
+		if cat.CategoryNameTH != "" {
+			cat.CategoryName = cat.CategoryNameTH
+		}
+		if cat.DescriptionTH != nil {
+			cat.Description = cat.DescriptionTH
+		}
+	} else {
+		if cat.CategoryNameEN != "" {
+			cat.CategoryName = cat.CategoryNameEN
+		}
+		if cat.DescriptionEN != nil {
+			cat.Description = cat.DescriptionEN
+		}
+	}
+}
+
+func localizeItem(item *models.Item, lang string) {
+	if item == nil {
+		return
+	}
+	if lang == "th" {
+		if item.ItemNameTH != "" {
+			item.ItemName = item.ItemNameTH
+		}
+		if item.DescriptionTH != nil {
+			item.Description = item.DescriptionTH
+		}
+	} else {
+		if item.ItemNameEN != "" {
+			item.ItemName = item.ItemNameEN
+		}
+		if item.DescriptionEN != nil {
+			item.Description = item.DescriptionEN
+		}
+	}
+	// Localize nested category if present
+	localizeCategory(&item.Category, lang)
+}
+
+// Resolve language for shop handler (duplicate to avoid cross-file dependency)
+func getLangShop(c *gin.Context) string {
+	lang := strings.ToLower(strings.TrimSpace(c.Query("lang")))
+	if lang == "" {
+		al := strings.ToLower(c.GetHeader("Accept-Language"))
+		if strings.HasPrefix(al, "th") {
+			lang = "th"
+		} else {
+			lang = "en"
+		}
+	}
+	if lang != "th" {
+		return "en"
+	}
+	return "th"
 }

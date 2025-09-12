@@ -3,12 +3,16 @@ package models
 import "time"
 
 type ItemCategory struct {
-	CategoryID   uint    `gorm:"primaryKey;column:category_id" json:"category_id"`
-	CategoryName string  `gorm:"column:category_name" json:"category_name"`
-	Description  *string `gorm:"column:description" json:"description"`
-	IconURL      *string `gorm:"column:icon_url" json:"icon_url"`
-	DisplayOrder int     `gorm:"column:display_order;default:0" json:"display_order"`
-	IsActive     bool    `gorm:"column:is_active;default:true" json:"is_active"`
+	CategoryID     uint    `gorm:"primaryKey;column:category_id" json:"category_id"`
+	CategoryName   string  `gorm:"column:category_name" json:"category_name"`
+	CategoryNameEN string  `gorm:"column:category_name_en" json:"category_name_en,omitempty"`
+	CategoryNameTH string  `gorm:"column:category_name_th" json:"category_name_th,omitempty"`
+	Description    *string `gorm:"column:description" json:"description"`
+	DescriptionEN  *string `gorm:"column:description_en" json:"description_en,omitempty"`
+	DescriptionTH  *string `gorm:"column:description_th" json:"description_th,omitempty"`
+	IconURL        *string `gorm:"column:icon_url" json:"icon_url"`
+	DisplayOrder   int     `gorm:"column:display_order;default:0" json:"display_order"`
+	IsActive       bool    `gorm:"column:is_active;default:true" json:"is_active"`
 }
 
 func (ItemCategory) TableName() string {
@@ -19,8 +23,12 @@ type Item struct {
 	ItemID        uint      `gorm:"primaryKey;column:item_id" json:"item_id"`
 	CategoryID    uint      `gorm:"column:category_id" json:"category_id"`
 	ItemName      string    `gorm:"column:item_name" json:"item_name"`
+	ItemNameEN    string    `gorm:"column:item_name_en" json:"item_name_en,omitempty"`
+	ItemNameTH    string    `gorm:"column:item_name_th" json:"item_name_th,omitempty"`
 	ItemCode      string    `gorm:"column:item_code" json:"item_code"`
 	Description   *string   `gorm:"column:description" json:"description"`
+	DescriptionEN *string   `gorm:"column:description_en" json:"description_en,omitempty"`
+	DescriptionTH *string   `gorm:"column:description_th" json:"description_th,omitempty"`
 	Price         float64   `gorm:"column:price" json:"price"`
 	RCONCommand   string    `gorm:"column:rcon_command" json:"rcon_command"`
 	ImageURL      *string   `gorm:"column:image_url" json:"image_url"`

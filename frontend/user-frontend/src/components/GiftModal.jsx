@@ -1,10 +1,12 @@
 import React, { useState } from 'react';
 import { GiftOutlined, InfoCircleOutlined, CloseOutlined } from '@ant-design/icons';
+import { useTranslation } from 'react-i18next';
 
 const GiftModal = ({ visible, onCancel, onConfirm, item, loading }) => {
   const [recipientSteamId, setRecipientSteamId] = useState('');
   const [confirmSteamId, setConfirmSteamId] = useState('');
   const [errors, setErrors] = useState({});
+  const { t } = useTranslation();
 
   const showMessage = (text, type = 'error') => {
     // Simple toast-like message
@@ -27,20 +29,20 @@ const GiftModal = ({ visible, onCancel, onConfirm, item, loading }) => {
     const newErrors = {};
 
     if (!recipientSteamId.trim()) {
-      newErrors.recipientSteamId = 'กรุณากรอก SteamID ของผู้รับ';
+      newErrors.recipientSteamId = t('giftModal.errors.idRequired');
     }
 
     if (!confirmSteamId.trim()) {
-      newErrors.confirmSteamId = 'กรุณายืนยัน SteamID';
+      newErrors.confirmSteamId = t('giftModal.errors.confirmRequired');
     }
 
     if (recipientSteamId && confirmSteamId && recipientSteamId !== confirmSteamId) {
-      newErrors.confirmSteamId = 'SteamID ไม่ตรงกัน กรุณาตรวจสอบ';
+      newErrors.confirmSteamId = t('giftModal.errors.idMismatch');
     }
 
     // Validate SteamID format (basic validation)
     if (recipientSteamId && !/^\d{17}$/.test(recipientSteamId)) {
-      newErrors.recipientSteamId = 'รูปแบบ SteamID ไม่ถูกต้อง (ต้องเป็นตัวเลข 17 หลัก)';
+      newErrors.recipientSteamId = t('giftModal.errors.idFormat');
     }
 
     setErrors(newErrors);
@@ -97,7 +99,7 @@ const GiftModal = ({ visible, onCancel, onConfirm, item, loading }) => {
                 <GiftOutlined className="text-xl text-blue-400" />
               </div>
               <div>
-                <h3 className="text-lg font-semibold text-white">ส่งของขวัญ</h3>
+                <h3 className="text-lg font-semibold text-white">{t('giftModal.title')}</h3>
                 <p className="text-sm text-gray-400">{item?.item_name || item?.name}</p>
               </div>
             </div>
@@ -116,12 +118,12 @@ const GiftModal = ({ visible, onCancel, onConfirm, item, loading }) => {
               <div className="flex items-start gap-3">
                 <InfoCircleOutlined className="text-blue-400 mt-0.5 flex-shrink-0" />
                 <div className="text-sm text-blue-200">
-                  <p className="font-medium mb-2">วิธีการหา SteamID</p>
+                  <p className="font-medium mb-2">{t('giftModal.howToTitle')}</p>
                   <ul className="space-y-1 text-xs text-blue-300">
-                    <li>• เข้าเกม ARK แล้วกด F1 เพื่อเปิด Console</li>
-                    <li>• พิมพ์คำสั่ง: <code className="bg-black/30 px-1 rounded">showmyadminmanager</code></li>
-                    <li>• SteamID จะแสดงอยู่ในส่วน Admin Manager</li>
-                    <li>• หรือเข้าเว็บ: <a href="https://steamid.io" target="_blank" rel="noopener noreferrer" className="text-blue-400 hover:text-blue-300 underline">steamid.io</a></li>
+                    <li>• {t('giftModal.instructions.i1')}</li>
+                    <li>• {t('giftModal.instructions.i2')}</li>
+                    <li>• {t('giftModal.instructions.i3')}</li>
+                    <li>• {t('giftModal.instructions.i4')} <a href="https://steamid.io" target="_blank" rel="noopener noreferrer" className="text-blue-400 hover:text-blue-300 underline">steamid.io</a></li>
                   </ul>
                 </div>
               </div>
@@ -130,11 +132,11 @@ const GiftModal = ({ visible, onCancel, onConfirm, item, loading }) => {
             {/* Recipient SteamID Input */}
             <div>
               <label className="block text-sm font-medium text-gray-300 mb-2">
-                SteamID ของผู้รับ <span className="text-red-400">*</span>
+                {t('giftModal.recipientLabel')} <span className="text-red-400">*</span>
               </label>
               <input
                 type="text"
-                placeholder="เช่น: 76561198000000000"
+                placeholder={t('giftModal.placeholderId')}
                 value={recipientSteamId}
                 onChange={(e) => handleInputChange('recipientSteamId', e.target.value)}
                 className={`w-full px-4 py-3 bg-white/10 border rounded-lg text-white placeholder-gray-500 backdrop-blur-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all ${
@@ -143,7 +145,7 @@ const GiftModal = ({ visible, onCancel, onConfirm, item, loading }) => {
                 style={{ fontFamily: 'SukhumvitSet' }}
               />
               <p className="text-xs text-gray-500 mt-1">
-                SteamID ต้องเป็นตัวเลข 17 หลัก
+                {t('giftModal.idHint')}
               </p>
               {errors.recipientSteamId && (
                 <p className="text-xs text-red-400 mt-1">{errors.recipientSteamId}</p>
@@ -153,7 +155,7 @@ const GiftModal = ({ visible, onCancel, onConfirm, item, loading }) => {
             {/* Confirm SteamID Input */}
             <div>
               <label className="block text-sm font-medium text-gray-300 mb-2">
-                ยืนยัน SteamID <span className="text-red-400">*</span>
+                {t('giftModal.confirmLabel')} <span className="text-red-400">*</span>
               </label>
               <input
                 type="text"
@@ -175,11 +177,11 @@ const GiftModal = ({ visible, onCancel, onConfirm, item, loading }) => {
               <div className="flex items-start gap-2">
                 <InfoCircleOutlined className="text-yellow-400 mt-0.5 flex-shrink-0" />
                 <div className="text-sm text-yellow-200">
-                  <p className="font-medium mb-1">คำเตือน:</p>
+                  <p className="font-medium mb-1">{t('giftModal.warningTitle')}</p>
                   <ul className="space-y-1 text-xs text-yellow-300">
-                    <li>• ตรวจสอบ SteamID ให้ถูกต้องก่อนส่ง</li>
-                    <li>• ไอเทมจะถูกส่งไปยังเซิร์ฟเวอร์ที่เลือก</li>
-                    <li>• การส่งของขวัญไม่สามารถยกเลิกได้</li>
+                    <li>• {t('giftModal.warnings.w1')}</li>
+                    <li>• {t('giftModal.warnings.w2')}</li>
+                    <li>• {t('giftModal.warnings.w3')}</li>
                   </ul>
                 </div>
               </div>
@@ -193,7 +195,7 @@ const GiftModal = ({ visible, onCancel, onConfirm, item, loading }) => {
               className="flex-1 bg-white/10 hover:bg-white/20 text-white border border-white/20 px-4 py-2.5 rounded-lg font-medium transition-all duration-200 backdrop-blur-sm"
               style={{ fontFamily: 'SukhumvitSet' }}
             >
-              ยกเลิก
+              {t('giftModal.cancel')}
             </button>
             <button
               onClick={handleConfirm}
@@ -202,7 +204,7 @@ const GiftModal = ({ visible, onCancel, onConfirm, item, loading }) => {
               style={{ fontFamily: 'SukhumvitSet' }}
             >
               <GiftOutlined />
-              {loading ? 'กำลังส่ง...' : 'ส่งของขวัญ'}
+              {loading ? t('giftModal.sending') : t('giftModal.send')}
             </button>
           </div>
         </div>

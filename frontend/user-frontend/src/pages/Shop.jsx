@@ -9,6 +9,7 @@ import GiftModal from '../components/GiftModal';
 import { SpotlightCard } from '../components/ui/SpotlightCard';
 import { Sparkles } from '../components/ui/Sparkles';
 import { message, Modal, notification } from 'antd';
+import { useTranslation } from 'react-i18next';
 import {
   ShoppingCartOutlined,
   GiftOutlined,
@@ -24,7 +25,7 @@ import {
 
 const Shop = () => {
   const navigate = useNavigate();
-  const { items, getItems, loading, error } = useShop();
+  const { categories, items, getItems, getCategories, loading, error } = useShop();
   const { isAuthenticated, login } = useAuthContext();
   const [selectedCategory, setSelectedCategory] = useState(null);
   const [searchTerm, setSearchTerm] = useState('');
@@ -33,129 +34,66 @@ const Shop = () => {
   const [giftLoading, setGiftLoading] = useState(false);
   const [buyLoading, setBuyLoading] = useState(false);
   const [modal, modalContextHolder] = Modal.useModal();
+  const { t, i18n } = useTranslation();
 
-  // Mock data for demonstration
-  const mockCategories = [
-    { id: 1, name: 'อาวุธ', icon: <ExperimentOutlined /> },
-    { id: 2, name: 'เกราะป้องกัน', icon: <SafetyOutlined /> },
-    { id: 3, name: 'ไดโนเสาร์', icon: <BugOutlined /> },
-    { id: 4, name: 'ทรัพยากร', icon: <DollarOutlined /> },
-    { id: 5, name: 'เครื่องมือ', icon: <ToolOutlined /> },
-    { id: 6, name: 'อาหาร', icon: <CoffeeOutlined /> }
-  ];
-
-  const mockItems = [
-    {
-      id: 1,
-      name: 'Tek Rifle',
-      description: 'ปืนไรเฟิลเทคโนโลยีชั้นสูง ยิงลำแสงพลาสม่าทรงพลัง',
-      price: 2500,
-      category_id: 1,
-      category: { name: 'อาวุธ' },
-      image_url: 'https://images.unsplash.com/photo-1518709268805-4e9042af2176?w=400&h=300&fit=crop',
-      rarity: 'legendary',
-      stock: 10,
-      featured: true
-    },
-    {
-      id: 2,
-      name: 'Riot Gear Set',
-      description: 'ชุดเกราะป้องกันระดับสูง ทนทานต่อการโจมทีทุกรูปแบบ',
-      price: 1800,
-      category_id: 2,
-      category: { name: 'เกราะป้องกัน' },
-      image_url: 'https://images.unsplash.com/photo-1578662996442-48f60103fc96?w=400&h=300&fit=crop',
-      rarity: 'epic',
-      stock: 15,
-      featured: false
-    },
-    {
-      id: 3,
-      name: 'T-Rex Saddle',
-      description: 'อานไดโนเสาร์สำหรับ T-Rex ระดับ 75+ ขึ้นไป',
-      price: 3500,
-      category_id: 3,
-      category: { name: 'ไดโนเสาร์' },
-      image_url: 'https://images.unsplash.com/photo-1551845041-63d96a1a632b?w=400&h=300&fit=crop',
-      rarity: 'legendary',
-      stock: 5,
-      featured: true
-    },
-    {
-      id: 4,
-      name: 'Crystal Bundle',
-      description: 'ชุดคริสตัลพิเศษ 500 ชิ้น สำหรับคราฟท์ของระดับสูง',
-      price: 1200,
-      category_id: 4,
-      category: { name: 'ทรัพยากร' },
-      image_url: 'https://images.unsplash.com/photo-1518709268805-4e9042af2176?w=400&h=300&fit=crop',
-      rarity: 'rare',
-      stock: 25,
-      featured: false
-    },
-    {
-      id: 5,
-      name: 'Chainsaw',
-      description: 'เลื่อยยนต์สำหรับตัดไม้และเก็บทรัพยากรอย่างรวดเร็ว',
-      price: 800,
-      category_id: 5,
-      category: { name: 'เครื่องมือ' },
-      image_url: 'https://images.unsplash.com/photo-1572635196237-14b3f281503f?w=400&h=300&fit=crop',
-      rarity: 'common',
-      stock: 20,
-      featured: false
-    },
-    {
-      id: 6,
-      name: 'Cooked Meat Pack',
-      description: 'ชุดเนื้อสุกแพ็ค 100 ชิ้น เพิ่ม HP และความอิ่ม',
-      price: 150,
-      category_id: 6,
-      category: { name: 'อาหาร' },
-      image_url: 'https://images.unsplash.com/photo-1529692236671-f1f6cf9683ba?w=400&h=300&fit=crop',
-      rarity: 'common',
-      stock: 50,
-      featured: false
-    },
-    {
-      id: 7,
-      name: 'Wyvern Egg',
-      description: 'ไข่วิร์เวิร์นระดับ 190 สำหรับเพาะพันธุ์',
-      price: 5000,
-      category_id: 3,
-      category: { name: 'ไดโนเสาร์' },
-      image_url: 'https://images.unsplash.com/photo-1578662996442-48f60103fc96?w=400&h=300&fit=crop',
-      rarity: 'legendary',
-      stock: 3,
-      featured: true
-    },
-    {
-      id: 8,
-      name: 'Element Pack',
-      description: 'ชุดเอเลเมนต์ 50 ชิ้น สำหรับเทคโนโลยีขั้นสูง',
-      price: 4200,
-      category_id: 4,
-      category: { name: 'ทรัพยากร' },
-      image_url: 'https://images.unsplash.com/photo-1518709268805-4e9042af2176?w=400&h=300&fit=crop',
-      rarity: 'epic',
-      stock: 8,
-      featured: true
-    }
+  // Category icons for display mapping
+  const categoryIcons = [
+    <ExperimentOutlined />,
+    <SafetyOutlined />,
+    <BugOutlined />,
+    <DollarOutlined />,
+    <ToolOutlined />,
+    <CoffeeOutlined />
   ];
 
   useEffect(() => {
-    getItems();
-  }, [getItems]);
+    (async () => {
+      try {
+        await Promise.all([getCategories(), getItems()]);
+      } catch {
+        // handled by hook error state
+      }
+    })();
+  }, [getCategories, getItems]);
+  // Refetch when language changes to get localized EN/TH data from API
+  useEffect(() => {
+    (async () => {
+      try {
+        await Promise.all([getCategories(), getItems()]);
+      } catch {
+        // handled by hook error state
+      }
+    })();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [i18n.language]);
 
-  // Use hard-coded categories per request
-  const displayCategories = mockCategories;
-  const displayItems = items.length > 0 ? items : mockItems;
+  // Refetch when language changes to get localized EN/TH data from API
+  useEffect(() => {
+    (async () => {
+      try {
+        await Promise.all([getCategories(), getItems()]);
+      } catch {
+        // handled by hook error state
+      }
+    })();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [i18n.language]);
+
+  // Categories and items from API
+  const displayCategories = (categories || []).map((cat, idx) => ({
+    id: cat.category_id || cat.id,
+    name: cat.category_name || cat.name,
+    icon: categoryIcons[idx % categoryIcons.length],
+  }));
+  const displayItems = items || [];
 
   const filteredItems = displayItems.filter(item => {
-    const itemName = item.name || item.item_name;
-    const matchesCategory = !selectedCategory || item.category_id === selectedCategory;
-    const matchesSearch = !searchTerm ||
-      itemName.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    const itemName = item.item_name || item.name;
+    const itemCatId = item.category_id || item.category?.category_id || item.category?.id;
+    const matchesCategory = !selectedCategory || itemCatId === selectedCategory;
+    const matchesSearch =
+      !searchTerm ||
+      itemName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
       (item.description && item.description.toLowerCase().includes(searchTerm.toLowerCase()));
     return matchesCategory && matchesSearch;
   });
@@ -171,10 +109,10 @@ const Shop = () => {
 
   const getRarityText = (rarity) => {
     switch (rarity) {
-      case 'legendary': return 'ตำนาน';
-      case 'epic': return 'มหากาพย์';
-      case 'rare': return 'หายาก';
-      default: return 'ธรรมดา';
+      case 'legendary': return t('shop.rarity.legendary');
+      case 'epic': return t('shop.rarity.epic');
+      case 'rare': return t('shop.rarity.rare');
+      default: return t('shop.rarity.common');
     }
   };
 
@@ -187,8 +125,8 @@ const Shop = () => {
     const run = () => {
       try {
         notification.warning({
-          message: 'เครดิตไม่เพียงพอ',
-          description: 'กรุณาเติมเครดิตก่อนทำการซื้อไอเทม',
+          message: t('shop.errors.insufficientCreditsTitle'),
+          description: t('shop.errors.insufficientCreditsDesc'),
           placement: 'topRight',
         });
       } catch {
@@ -207,7 +145,7 @@ const Shop = () => {
 
     // Check if user is authenticated
     if (!isAuthenticated) {
-      message.warning('กรุณาเข้าสู่ระบบก่อนทำการซื้อ');
+      message.warning(t('shop.errors.loginRequiredBuy'));
       login();
       return;
     }
@@ -216,10 +154,10 @@ const Shop = () => {
     const priceText = typeof item.price === 'number' ? item.price.toLocaleString() : item.price;
 
     modal.confirm({
-      title: 'ยืนยันการซื้อ',
-      content: `คุณต้องการซื้อ ${itemName} ราคา ฿${priceText} ใช่หรือไม่?`,
-      okText: 'ยืนยัน',
-      cancelText: 'ยกเลิก',
+      title: t('shop.confirm.title'),
+      content: t('shop.confirm.content', { item: itemName, currency: t('common.currencySymbol'), price: priceText }),
+      okText: t('shop.confirm.ok'),
+      cancelText: t('shop.confirm.cancel'),
       centered: true,
       onOk: async () => {
         try {
@@ -295,12 +233,12 @@ const Shop = () => {
           }
 
           Modal.success({
-            title: 'สั่งซื้อสำเร็จ',
-            content: `ซื้อ ${itemName} เรียบร้อย ไอเทมจะถูกส่งไปยังเซิร์ฟเวอร์`,
+            title: t('shop.purchase.successTitle'),
+            content: t('shop.purchase.successModal', { item: itemName }),
           });
           notification.success({
-            message: 'สั่งซื้อสำเร็จ',
-            description: `ซื้อ ${itemName} สำเร็จ`,
+            message: t('shop.purchase.successTitle'),
+            description: t('shop.purchase.successDesc', { item: itemName }),
             placement: 'topRight',
           });
         } catch (error) {
@@ -308,7 +246,7 @@ const Shop = () => {
 
           // กรณีไม่ได้ล็อกอิน
           if (error.response?.status === 401) {
-            message.error('กรุณาเข้าสู่ระบบก่อนทำการซื้อ');
+            message.error(t('shop.errors.loginRequiredBuy'));
             login();
             return;
           }
@@ -331,19 +269,19 @@ const Shop = () => {
             showInsufficientCredits(errorMessage);
           } else if (errorCode === 'OUT_OF_STOCK') {
             notification.error({
-              message: 'ซื้อไม่สำเร็จ',
-              description: 'ไอเทมนี้หมดสต๊อกแล้ว',
+              message: t('shop.errors.outOfStockTitle'),
+              description: t('shop.errors.outOfStockDesc'),
               placement: 'topRight',
             });
           } else if (errorCode === 'ITEM_NOT_FOUND') {
             notification.error({
-              message: 'ซื้อไม่สำเร็จ',
-              description: 'ไม่พบไอเทมนี้',
+              message: t('shop.errors.notFoundTitle'),
+              description: t('shop.errors.notFoundDesc'),
               placement: 'topRight',
             });
           } else {
             notification.error({
-              message: 'ซื้อไม่สำเร็จ',
+              message: t('shop.errors.genericTitle'),
               description: errorMessage,
               placement: 'topRight',
             });
@@ -360,7 +298,7 @@ const Shop = () => {
     
     // Check if user is authenticated
     if (!isAuthenticated) {
-      message.warning('กรุณาเข้าสู่ระบบก่อนส่งของขวัญ');
+      message.warning(t('shop.errors.loginRequiredGift'));
       login();
       return;
     }
@@ -475,10 +413,10 @@ const Shop = () => {
         <div className="relative pt-20 pb-8">
           <div className="relative z-20 text-center px-4">
             <h1 className="text-5xl font-bold mb-4 text-white" style={{ fontFamily: 'SukhumvitSet' }}>
-              ร้านค้า
+              {t('shop.title')}
             </h1>
             <p className="text-xl text-gray-200 max-w-2xl mx-auto leading-relaxed" style={{ fontFamily: 'SukhumvitSet' }}>
-              ซื้อไอเทมและบูสเตอร์สำหรับการผจญภัยใน ARK ของคุณ
+              {t('shop.subtitle')}
             </p>
           </div>
         </div>
@@ -520,7 +458,7 @@ const Shop = () => {
             <div className="flex-1">
               <input
                 type="text"
-                placeholder="ค้นหาไอเทม..."
+                placeholder={t('shop.searchPlaceholder')}
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
                 className="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-lg text-white placeholder-gray-400 backdrop-blur-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
@@ -537,7 +475,7 @@ const Shop = () => {
                 }`}
                 style={{ fontFamily: 'SukhumvitSet' }}
               >
-                หมวดหมู่ทั้งหมด
+                {t('shop.allCategories')}
               </button>
               {displayCategories.map((category) => (
                 <button
@@ -571,7 +509,7 @@ const Shop = () => {
                 {(item.featured || item.is_featured) && (
                   <div className="absolute top-2 left-2 z-10">
                     <div className="bg-blue-600 text-white text-xs font-bold px-2 py-1 rounded-full flex items-center gap-1" style={{ fontFamily: 'SukhumvitSet' }}>
-                      <StarOutlined /> แนะนำ
+                      <StarOutlined /> {t('shop.featured')}
                     </div>
                   </div>
                 )}
@@ -602,16 +540,16 @@ const Shop = () => {
 
                     <div className="flex items-center justify-between">
                       <span className="text-xl font-bold text-green-400" style={{ fontFamily: 'SukhumvitSet' }}>
-                        ฿{item.price.toLocaleString()}
+                        {t('common.currencySymbol')}{item.price.toLocaleString()}
                       </span>
                       <span className="text-xs text-gray-400" style={{ fontFamily: 'SukhumvitSet' }}>
-                        เหลือ {item.stock || item.stock_quantity}
+                        {t('shop.left', { count: item.stock || item.stock_quantity })}
                       </span>
                     </div>
 
                     <div className="flex items-center justify-between">
                       <span className="text-sm text-blue-400 bg-blue-600/20 px-2 py-1 rounded-full" style={{ fontFamily: 'SukhumvitSet' }}>
-                        {item.category?.name}
+                        {item.category?.category_name || item.category?.name}
                       </span>
                     </div>
                   </div>
@@ -627,7 +565,7 @@ const Shop = () => {
                           style={{ fontFamily: 'SukhumvitSet' }}
                         >
                           <ShoppingCartOutlined />
-                          {buyLoading ? 'กำลังซื้อ...' : 'ซื้อ'}
+                          {buyLoading ? t('shop.buttons.buying') : t('shop.buttons.buy')}
                         </button>
                         <button
                           onClick={(e) => handleGiftItem(item, e)}
@@ -635,7 +573,7 @@ const Shop = () => {
                           style={{ fontFamily: 'SukhumvitSet' }}
                         >
                           <GiftOutlined />
-                          ของขวัญ
+                          {t('shop.buttons.gift')}
                         </button>
                       </>
                     ) : (
@@ -648,7 +586,7 @@ const Shop = () => {
                         style={{ fontFamily: 'SukhumvitSet' }}
                       >
                         <LoginOutlined />
-                        เข้าสู่ระบบเพื่อซื้อ
+                        {t('shop.loginToBuy')}
                       </button>
                     )}
                   </div>
@@ -662,10 +600,10 @@ const Shop = () => {
             <div className="text-center py-12">
               <div className="text-6xl mb-4">🛒</div>
               <h3 className="text-lg font-medium text-white mb-2" style={{ fontFamily: 'SukhumvitSet' }}>
-                ไม่พบไอเทม
+                {t('shop.empty.title')}
               </h3>
               <p className="text-gray-400" style={{ fontFamily: 'SukhumvitSet' }}>
-                ลองปรับการค้นหาหรือตัวกรองหมวดหมู่ของคุณ
+                {t('shop.empty.subtitle')}
               </p>
             </div>
           )}
@@ -673,24 +611,24 @@ const Shop = () => {
           {/* Shop Info */}
           <div className="bg-blue-900/30 border border-blue-500/30 p-6 rounded-lg backdrop-blur-sm">
             <div className="flex justify-between items-center mb-4">
-              <h3 className="font-semibold text-white" style={{ fontFamily: 'SukhumvitSet' }}>💡 เคล็ดลับการซื้อสินค้า</h3>
+              <h3 className="font-semibold text-white" style={{ fontFamily: 'SukhumvitSet' }}>{t('shop.tips.header')}</h3>
             </div>
             <ul className="text-sm text-gray-300 space-y-2" style={{ fontFamily: 'SukhumvitSet' }}>
               <li className="flex items-start">
                 <span className="w-2 h-2 bg-blue-400 rounded-full mr-3 mt-2 flex-shrink-0"></span>
-                การซื้อทั้งหมดจะได้รับการประมวลผล <strong className="text-white">ทันที</strong>
+                {t('shop.tips.t1')}
               </li>
               <li className="flex items-start">
                 <span className="w-2 h-2 bg-blue-400 rounded-full mr-3 mt-2 flex-shrink-0"></span>
-                ไอเทมจะถูกส่งตรงไปยัง <strong className="text-white">เซิร์ฟเวอร์ที่เลือก</strong> ของคุณ
+                {t('shop.tips.t2')}
               </li>
               <li className="flex items-start">
                 <span className="w-2 h-2 bg-blue-400 rounded-full mr-3 mt-2 flex-shrink-0"></span>
-                ใช้เครดิตจาก <strong className="text-white">ยอดเงินในบัญชี</strong> ของคุณ
+                {t('shop.tips.t3')}
               </li>
               <li className="flex items-start">
                 <span className="w-2 h-2 bg-blue-400 rounded-full mr-3 mt-2 flex-shrink-0"></span>
-                หากต้องการความช่วยเหลือ <strong className="text-white">ติดต่อแอดมิน</strong>
+                {t('shop.tips.t4')}
               </li>
             </ul>
           </div>
